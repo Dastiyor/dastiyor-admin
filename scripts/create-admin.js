@@ -2,7 +2,7 @@
  * Create or reset the admin user. Safe to run against production.
  * Usage: DATABASE_URL="postgresql://..." node scripts/create-admin.js
  *
- * Creates/updates: admin@dastiyor.com with password "admin123"
+ * Creates/updates: admin@dastiyor.com with password "yDFidpXBK2TDSXqONWAz"
  */
 
 const { PrismaClient } = require("@prisma/client");
@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const email = "admin@dastiyor.com";
-  const password = "admin123";
+  const password = "yDFidpXBK2TDSXqONWAz";
   const hashed = await bcrypt.hash(password, 10);
 
   await prisma.user.upsert({
