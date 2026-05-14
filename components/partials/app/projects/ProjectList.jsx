@@ -205,7 +205,7 @@ const ProjectList = ({ projects }) => {
             <div className="overflow-hidden ">
               <table
                 className="min-w-full divide-y divide-slate-100 table-fixed dark:divide-slate-700"
-                {...getTableProps}
+                {...getTableProps()}
               >
                 <thead className=" bg-slate-100 dark:bg-slate-700">
                   {headerGroups.map((headerGroup) => (
@@ -237,7 +237,7 @@ const ProjectList = ({ projects }) => {
                 </thead>
                 <tbody
                   className="bg-white divide-y divide-slate-100 dark:bg-slate-800 dark:divide-slate-700"
-                  {...getTableBodyProps}
+                  {...getTableBodyProps()}
                 >
                   {page.map((row) => {
                     prepareRow(row);

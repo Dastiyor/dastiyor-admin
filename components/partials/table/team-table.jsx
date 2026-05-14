@@ -1,7 +1,6 @@
 "use client"
 import { useMemo } from "react";
 import { teamData } from "../../../constant/table-data";
-import { v4 as uuidv4 } from "uuid";
 import Icon from "@/components/ui/Icon";
 import Dropdown from "@/components/ui/Dropdown";
 import { Menu } from "@headlessui/react";
@@ -179,7 +178,7 @@ const COLUMNS = [
           >
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
               {actions.map((item) => (
-                <Menu.Item key={uuidv4()}>
+                <Menu.Item key={item.name}>
                   <div
                     className={`
                 
@@ -253,37 +252,41 @@ const TeamTable = () => {
             <div className="overflow-hidden ">
               <table
                 className="min-w-full divide-y divide-slate-100 table-fixed dark:divide-slate-700"
-                {...getTableProps}
+                {...getTableProps()}
               >
                 <thead className=" bg-slate-100 dark:bg-slate-700">
-                  {headerGroups.map((headerGroup, rowIndex) => {
+                  {headerGroups.map((headerGroup) => {
                     const { key, ...restHeaderGroupProps } =
                       headerGroup.getHeaderGroupProps();
-                    <tr key={key} {...restHeaderGroupProps}>
-                      {headerGroup.headers.map((column, columnIndex) => {
-                        const { key, ...restColumn } = column.getHeaderProps();
-                        <th
-                          key={key}
-                          {...restColumn}
-                          scope="col"
-                          className=" table-th "
-                        >
-                          {column.render("Header")}
-                          <span>
-                            {column.isSorted
-                              ? column.isSortedDesc
-                                ? " 🔽"
-                                : " 🔼"
-                              : ""}
-                          </span>
-                        </th>;
-                      })}
-                    </tr>;
+                    return (
+                      <tr key={key} {...restHeaderGroupProps}>
+                        {headerGroup.headers.map((column) => {
+                          const { key, ...restColumn } = column.getHeaderProps();
+                          return (
+                            <th
+                              key={key}
+                              {...restColumn}
+                              scope="col"
+                              className=" table-th "
+                            >
+                              {column.render("Header")}
+                              <span>
+                                {column.isSorted
+                                  ? column.isSortedDesc
+                                    ? " 🔽"
+                                    : " 🔼"
+                                  : ""}
+                              </span>
+                            </th>
+                          );
+                        })}
+                      </tr>
+                    );
                   })}
                 </thead>
                 <tbody
                   className="bg-white divide-y divide-slate-100 dark:bg-slate-800 dark:divide-slate-700"
-                  {...getTableBodyProps}
+                  {...getTableBodyProps()}
                 >
                   {page.map((row) => {
                     prepareRow(row);
