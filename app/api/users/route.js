@@ -25,6 +25,10 @@ export async function GET(request) {
           role: true,
           phone: true,
           isVerified: true,
+          loginAttempts: true,
+          lockedUntil: true,
+          googleId: true,
+          appleId: true,
           createdAt: true,
           _count: {
             select: { tasks: true, responses: true, reviewsReceived: true },

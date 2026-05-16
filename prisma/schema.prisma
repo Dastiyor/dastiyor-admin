@@ -12,7 +12,9 @@ model User {
   id                    String    @id @default(cuid())
   fullName              String
   email                 String    @unique
-  password              String
+  password              String?
+  googleId              String?   @unique
+  appleId               String?   @unique
   phone                 String?
   bio                   String?
   skills                String?
@@ -21,41 +23,46 @@ model User {
   role                  String    @default("CUSTOMER")
   isVerified            Boolean   @default(false)
   verificationDocuments String?
+  loginAttempts         Int       @default(0)
+  lockedUntil           DateTime?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  tasks           Task[]           @relation("UserTasks")
-  assignedTasks   Task[]           @relation("AssignedTasks")
-  responses       Response[]
-  subscription    Subscription?
-  sentMessages    Message[]        @relation("SentMessages")
-  receivedMessages Message[]       @relation("ReceivedMessages")
-  reviewsGiven   Review[]         @relation("ReviewsGiven")
-  reviewsReceived Review[]        @relation("ReviewsReceived")
-  passwordResets  PasswordReset[]
-  notifications   Notification[]
-  favoriteTasks  TaskFavorite[]
-  payments       Payment[]
-  reportsMade    Report[]         @relation("ReportReporter")
-  reportsAgainst Report[]         @relation("ReportTargetUser")
+  tasks            Task[]            @relation("UserTasks")
+  assignedTasks    Task[]            @relation("AssignedTasks")
+  responses        Response[]
+  subscription     Subscription?
+  sentMessages     Message[]         @relation("SentMessages")
+  receivedMessages Message[]         @relation("ReceivedMessages")
+  reviewsGiven     Review[]          @relation("ReviewsGiven")
+  reviewsReceived  Review[]          @relation("ReviewsReceived")
+  passwordResets   PasswordReset[]
+  notifications    Notification[]
+  favoriteTasks    TaskFavorite[]
+  actionLogs       ActionLog[]
+  pushSubscriptions PushSubscription[]
+  payments         Payment[]
+  reportsMade      Report[]          @relation("ReportReporter")
+  reportsAgainst   Report[]          @relation("ReportTargetUser")
 }
 
 model Task {
-  id          String    @id @default(cuid())
-  title       String
-  description String
-  category    String    @default("Other")
-  subcategory String?
-  budgetType  String
-  budgetAmount String?
-  city        String
-  address     String?
-  images      String?
-  urgency     String    @default("normal")
-  dueDate     DateTime?
-  status      String    @default("OPEN")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id             String    @id @default(cuid())
+  title          String
+  description    String
+  category       String    @default("Other")
+  subcategory    String?
+  budgetType     String
+  budgetAmount   String?
+  budgetAmountNum Int?
+  city           String
+  address        String?
+  images         String?
+  urgency        String    @default("normal")
+  dueDate        DateTime?
+  status         String    @default("OPEN")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   userId         String
   user           User       @relation("UserTasks", fields: [userId], references: [id])
@@ -65,13 +72,21 @@ model Task {
   messages       Message[]
   review         Review?
   favorites      TaskFavorite[]
-  reports        Report[]         @relation("ReportTargetTask")
+  reports        Report[]   @relation("ReportTargetTask")
+
+  @@index([status])
+  @@index([category])
+  @@index([city])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status, category, city])
 }
 
 model Response {
   id            String   @id @default(cuid())
   message       String
   price         String
+  priceNum      Int?
   estimatedTime String?
   status        String   @default("PENDING")
   createdAt     DateTime @default(now())
@@ -81,6 +96,9 @@ model Response {
   task   Task   @relation(fields: [taskId], references: [id])
   userId String
   user   User   @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@index([userId])
 }
 
 model Subscription {
@@ -107,6 +125,9 @@ model Message {
   receiver   User    @relation("ReceivedMessages", fields: [receiverId], references: [id])
   taskId    String?
   task      Task?   @relation(fields: [taskId], references: [id])
+
+  @@index([senderId, createdAt])
+  @@index([receiverId, isRead, createdAt])
 }
 
 model PasswordReset {
@@ -157,6 +178,25 @@ model Notification {
 
   userId String
   user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead, createdAt])
+}
+
+model ActionLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String?
+  entityId  String?
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }
 
 model TaskFavorite {
@@ -171,14 +211,27 @@ model TaskFavorite {
   @@unique([userId, taskId])
 }
 
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 model Category {
-  id             String   @id @default(cuid())
-  name           String
-  slug           String   @unique
-  order          Int      @default(0)
-  subcategories  String?   // JSON array of subcategory names
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  order         Int      @default(0)
+  subcategories String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model SystemSetting {
@@ -188,15 +241,25 @@ model SystemSetting {
 }
 
 model Payment {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  amount      Float
-  currency    String   @default("USD")
-  status      String   @default("SUCCEEDED") // e.g. SUCCEEDED, PENDING, FAILED, REFUNDED
-  method      String              // e.g. stripe, paypal, bank
-  description String?
-  createdAt   DateTime @default(now())
+  id              String   @id @default(cuid())
+  amount          Int
+  currency        String   @default("TJS")
+  status          String   @default("PENDING")
+  type            String
+  description     String
+  plan            String?
+  transactionId   String?  @unique
+  paymentMethod   String?
+  smartpayOrderId String?  @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Report {
@@ -208,6 +271,9 @@ model Report {
   targetTaskId String?
   targetTask   Task?    @relation("ReportTargetTask", fields: [targetTaskId], references: [id])
   reason       String
-  status       String   @default("OPEN") // OPEN, RESOLVED, DISMISSED
+  status       String   @default("OPEN")
   createdAt    DateTime @default(now())
+
+  @@index([status])
+  @@index([reporterId])
 }

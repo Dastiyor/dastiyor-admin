@@ -98,6 +98,20 @@ export default function AdminUsers() {
     }
   };
 
+  const handleUnlock = async (id) => {
+    try {
+      const res = await fetch(`/api/users/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ unlock: true }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      fetchUsers();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
   const handleSubmit = async () => {
     const url = currentUser ? `/api/users/${currentUser.id}` : "/api/users";
     const method = currentUser ? "PUT" : "POST";
@@ -152,13 +166,26 @@ export default function AdminUsers() {
     {
       Header: "Status",
       accessor: "isVerified",
-      Cell: (row) => (
-        row?.cell?.value ? (
-          <span className="text-success-500 text-sm">Verified</span>
-        ) : (
-          <span className="text-slate-500 text-sm">Unverified</span>
-        )
-      ),
+      Cell: (row) => {
+        const user = row?.row?.original;
+        const isLocked = user?.lockedUntil && new Date(user.lockedUntil) > new Date();
+        return (
+          <div className="flex flex-col gap-1">
+            {row?.cell?.value ? (
+              <span className="text-success-500 text-xs">Verified</span>
+            ) : (
+              <span className="text-slate-400 text-xs">Unverified</span>
+            )}
+            {user?.googleId && <span className="text-xs text-info-500">Google</span>}
+            {user?.appleId && <span className="text-xs text-slate-500">Apple</span>}
+            {isLocked && (
+              <span className="text-danger-500 text-xs font-medium">
+                Locked ({user.loginAttempts} attempts)
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       Header: "Tasks / Responses",
@@ -173,20 +200,31 @@ export default function AdminUsers() {
     {
       Header: "Action",
       accessor: "action",
-      Cell: (row) => (
-        <div className="flex space-x-3 rtl:space-x-reverse">
-          <Tooltip content="Edit" placement="top" arrow animation="shift-away">
-            <button className="action-btn" type="button" onClick={() => handleEdit(row.row.original)}>
-              <Icon icon="heroicons:pencil-square" />
-            </button>
-          </Tooltip>
-          <Tooltip content="Delete" placement="top" arrow animation="shift-away" theme="danger">
-            <button className="action-btn" type="button" onClick={() => handleDelete(row.row.original.id)}>
-              <Icon icon="heroicons:trash" />
-            </button>
-          </Tooltip>
-        </div>
-      ),
+      Cell: (row) => {
+        const user = row?.row?.original;
+        const isLocked = user?.lockedUntil && new Date(user.lockedUntil) > new Date();
+        return (
+          <div className="flex space-x-3 rtl:space-x-reverse">
+            <Tooltip content="Edit" placement="top" arrow animation="shift-away">
+              <button className="action-btn" type="button" onClick={() => handleEdit(user)}>
+                <Icon icon="heroicons:pencil-square" />
+              </button>
+            </Tooltip>
+            {isLocked && (
+              <Tooltip content="Unlock" placement="top" arrow animation="shift-away">
+                <button className="action-btn text-warning-500" type="button" onClick={() => handleUnlock(user.id)}>
+                  <Icon icon="heroicons:lock-open" />
+                </button>
+              </Tooltip>
+            )}
+            <Tooltip content="Delete" placement="top" arrow animation="shift-away" theme="danger">
+              <button className="action-btn" type="button" onClick={() => handleDelete(user.id)}>
+                <Icon icon="heroicons:trash" />
+              </button>
+            </Tooltip>
+          </div>
+        );
+      },
     },
   ];
 

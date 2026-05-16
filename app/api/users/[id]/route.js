@@ -12,6 +12,10 @@ export async function GET(request, { params }) {
                 role: true,
                 phone: true,
                 isVerified: true,
+                loginAttempts: true,
+                lockedUntil: true,
+                googleId: true,
+                appleId: true,
                 createdAt: true,
             },
         });
@@ -28,7 +32,7 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
     try {
         const body = await request.json();
-        const { fullName, email, role, phone, isVerified, password } = body;
+        const { fullName, email, role, phone, isVerified, password, unlock } = body;
 
         const data = {
             fullName,
@@ -37,6 +41,11 @@ export async function PUT(request, { params }) {
             phone: phone || null,
             isVerified: !!isVerified,
         };
+
+        if (unlock) {
+            data.loginAttempts = 0;
+            data.lockedUntil = null;
+        }
 
         if (password) {
             const bcrypt = require("bcryptjs");

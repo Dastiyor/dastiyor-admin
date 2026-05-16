@@ -9,10 +9,12 @@ export async function GET(request) {
     const skip = (page - 1) * limit;
     const status = searchParams.get("status") || undefined;
     const category = searchParams.get("category") || undefined;
+    const urgency = searchParams.get("urgency") || undefined;
 
     const where = {};
     if (status) where.status = status;
     if (category) where.category = category;
+    if (urgency) where.urgency = urgency;
 
     const [tasks, total] = await Promise.all([
       prisma.task.findMany({

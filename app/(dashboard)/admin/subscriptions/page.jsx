@@ -399,7 +399,7 @@ export default function AdminSubscriptions() {
       <Card title="Payments" className="mt-5">
         <p className="text-slate-500 dark:text-slate-400 text-sm mb-4 flex items-center gap-2">
           <Icon icon="heroicons-outline:information-circle" className="text-lg" />
-          Payment history. Connect payment provider (e.g. Stripe) in Settings → Payment.
+          Payment history (SmartPay). Amounts in TJS (Tajik Somoni).
         </p>
         {paymentsLoading ? (
           <div className="p-4 text-center text-slate-500">Loading payments...</div>
@@ -412,7 +412,7 @@ export default function AdminSubscriptions() {
                 <tr>
                   <th className="table-th text-left">User</th>
                   <th className="table-th text-left">Amount</th>
-                  <th className="table-th text-left">Currency</th>
+                  <th className="table-th text-left">Type / Plan</th>
                   <th className="table-th text-left">Method</th>
                   <th className="table-th text-left">Status</th>
                   <th className="table-th text-left">Date</th>
@@ -427,11 +427,23 @@ export default function AdminSubscriptions() {
                         <span className="text-xs text-slate-500">{p.user?.email}</span>
                       </div>
                     </td>
-                    <td className="table-td text-sm text-slate-600 dark:text-slate-300">{p.amount}</td>
-                    <td className="table-td text-sm text-slate-600 dark:text-slate-300">{p.currency}</td>
-                    <td className="table-td text-sm text-slate-600 dark:text-slate-300 capitalize">{p.method}</td>
+                    <td className="table-td text-sm text-slate-600 dark:text-slate-300">
+                      {p.amount} {p.currency ?? "TJS"}
+                    </td>
+                    <td className="table-td text-sm text-slate-600 dark:text-slate-300 capitalize">
+                      {p.type ?? "—"}
+                      {p.plan && <span className="text-xs text-slate-400 ml-1">({p.plan})</span>}
+                    </td>
+                    <td className="table-td text-sm text-slate-600 dark:text-slate-300 capitalize">
+                      {p.paymentMethod ?? "—"}
+                    </td>
                     <td className="table-td">
-                      <span className={`text-sm ${p.status === "SUCCEEDED" ? "text-success-500" : p.status === "FAILED" ? "text-danger-500" : "text-slate-500"}`}>{p.status}</span>
+                      <span className={`text-sm ${
+                        p.status === "COMPLETED" ? "text-success-500" :
+                        p.status === "FAILED" ? "text-danger-500" :
+                        p.status === "CANCELLED" ? "text-warning-500" :
+                        "text-slate-500"
+                      }`}>{p.status}</span>
                     </td>
                     <td className="table-td text-sm text-slate-500">
                       {p.createdAt ? new Date(p.createdAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }) : "—"}

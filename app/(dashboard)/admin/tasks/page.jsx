@@ -45,6 +45,7 @@ export default function AdminTasks() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState("");
+  const [urgencyFilter, setUrgencyFilter] = useState("");
   const [categories, setCategories] = useState([]);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -56,6 +57,7 @@ export default function AdminTasks() {
     subcategory: "",
     city: "",
     status: "OPEN",
+    urgency: "normal",
     budgetType: "negotiable",
     budgetAmount: "",
     dueDate: "",
@@ -70,6 +72,7 @@ export default function AdminTasks() {
       // Fetch larger set for client-side pagination
       const qs = new URLSearchParams({ limit: "1000" });
       if (statusFilter) qs.set("status", statusFilter);
+      if (urgencyFilter) qs.set("urgency", urgencyFilter);
       const res = await fetch(`/api/tasks?${qs.toString()}`, { credentials: "include" });
       if (!res.ok) throw new Error(await res.text());
       const json = await res.json();
@@ -88,7 +91,7 @@ export default function AdminTasks() {
 
   useEffect(() => {
     fetchTasks();
-  }, [statusFilter]);
+  }, [statusFilter, urgencyFilter]);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,6 +120,7 @@ export default function AdminTasks() {
       subcategory: "",
       city: "",
       status: "OPEN",
+      urgency: "normal",
       budgetType: "negotiable",
       budgetAmount: "",
       dueDate: "",
@@ -134,6 +138,7 @@ export default function AdminTasks() {
       subcategory: task.subcategory || "",
       city: task.city || "",
       status: task.status || "OPEN",
+      urgency: task.urgency || "normal",
       budgetType: task.budgetType || "negotiable",
       budgetAmount: task.budgetAmount || "",
       dueDate: task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : "",
@@ -191,6 +196,17 @@ export default function AdminTasks() {
       Header: "Category",
       accessor: "category",
       Cell: (row) => <span className="text-sm text-slate-600 dark:text-slate-300">{row?.cell?.value}</span>,
+    },
+    {
+      Header: "Urgency",
+      accessor: "urgency",
+      Cell: (row) => {
+        const u = row?.cell?.value || "normal";
+        const cls = u === "urgent" ? "bg-danger-500/10 text-danger-500" :
+          u === "low" ? "bg-slate-500/10 text-slate-500" :
+            "bg-info-500/10 text-info-500";
+        return <span className={`badge ${cls} capitalize`}>{u}</span>;
+      },
     },
     {
       Header: "Status",
@@ -293,7 +309,7 @@ export default function AdminTasks() {
       <Card noborder>
         <div className="md:flex justify-between items-center mb-6">
           <Button text="Add Task" className="btn-success btn-sm" onClick={handleCreate} />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <select
               className="form-control py-2 w-max"
               value={statusFilter}
@@ -304,6 +320,16 @@ export default function AdminTasks() {
               <option value="IN_PROGRESS">IN_PROGRESS</option>
               <option value="COMPLETED">COMPLETED</option>
               <option value="CANCELLED">CANCELLED</option>
+            </select>
+            <select
+              className="form-control py-2 w-max"
+              value={urgencyFilter}
+              onChange={(e) => setUrgencyFilter(e.target.value)}
+            >
+              <option value="">All urgency</option>
+              <option value="low">Low</option>
+              <option value="normal">Normal</option>
+              <option value="urgent">Urgent</option>
             </select>
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
@@ -530,6 +556,12 @@ export default function AdminTasks() {
             options={["OPEN", "IN_PROGRESS", "COMPLETED", "CANCELLED"]}
             value={formData.status}
             onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+          />
+          <Select
+            label="Urgency"
+            options={["low", "normal", "urgent"]}
+            value={formData.urgency}
+            onChange={(e) => setFormData({ ...formData, urgency: e.target.value })}
           />
           <Select
             label="Budget Type"
