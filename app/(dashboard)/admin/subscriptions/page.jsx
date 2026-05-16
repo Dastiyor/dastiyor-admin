@@ -28,6 +28,10 @@ export default function AdminSubscriptions() {
   const [busy, setBusy] = useState(false);
   const [payments, setPayments] = useState([]);
   const [paymentsLoading, setPaymentsLoading] = useState(true);
+  const [paymentStatus, setPaymentStatus] = useState("");
+  const [paymentDateFrom, setPaymentDateFrom] = useState("");
+  const [paymentDateTo, setPaymentDateTo] = useState("");
+  const [refundBusy, setRefundBusy] = useState(null);
 
   const fetchSubscriptions = async () => {
     setLoading(true);
@@ -49,25 +53,49 @@ export default function AdminSubscriptions() {
     fetchSubscriptions();
   }, [filterActive]);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchPayments() {
-      setPaymentsLoading(true);
-      try {
-        const res = await fetch("/api/payments?limit=100", { credentials: "include" });
-        if (res.ok) {
-          const json = await res.json();
-          if (!cancelled) setPayments(json.data || []);
-        }
-      } catch {
-        if (!cancelled) setPayments([]);
-      } finally {
-        if (!cancelled) setPaymentsLoading(false);
+  const fetchPayments = async () => {
+    setPaymentsLoading(true);
+    try {
+      const qs = new URLSearchParams({ limit: "200" });
+      if (paymentStatus) qs.set("status", paymentStatus);
+      if (paymentDateFrom) qs.set("from", paymentDateFrom);
+      if (paymentDateTo) qs.set("to", paymentDateTo);
+      const res = await fetch(`/api/payments?${qs.toString()}`, { credentials: "include" });
+      if (res.ok) {
+        const json = await res.json();
+        setPayments(json.data || []);
       }
+    } catch {
+      setPayments([]);
+    } finally {
+      setPaymentsLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchPayments();
-    return () => { cancelled = true; };
-  }, []);
+  }, [paymentStatus, paymentDateFrom, paymentDateTo]);
+
+  const handleRefund = async (paymentId) => {
+    if (!confirm("Mark this payment as refunded? This will update the status to CANCELLED.")) return;
+    setRefundBusy(paymentId);
+    try {
+      const res = await fetch(`/api/payments/${paymentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ action: "refund" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      toast.success("Payment refunded");
+      fetchPayments();
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setRefundBusy(null);
+    }
+  };
 
   const handleExtend = (sub) => {
     setSelectedSub(sub);
@@ -401,6 +429,27 @@ export default function AdminSubscriptions() {
           <Icon icon="heroicons-outline:information-circle" className="text-lg" />
           Payment history (SmartPay). Amounts in TJS (Tajik Somoni).
         </p>
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <select
+            className="form-control py-2 w-max"
+            value={paymentStatus}
+            onChange={(e) => setPaymentStatus(e.target.value)}
+          >
+            <option value="">All statuses</option>
+            <option value="PENDING">PENDING</option>
+            <option value="COMPLETED">COMPLETED</option>
+            <option value="FAILED">FAILED</option>
+            <option value="CANCELLED">CANCELLED</option>
+          </select>
+          <input type="date" className="form-control py-2" value={paymentDateFrom} onChange={(e) => setPaymentDateFrom(e.target.value)} title="From" />
+          <span className="text-slate-400 text-sm">–</span>
+          <input type="date" className="form-control py-2" value={paymentDateTo} onChange={(e) => setPaymentDateTo(e.target.value)} title="To" />
+          {(paymentDateFrom || paymentDateTo || paymentStatus) && (
+            <button className="btn btn-sm btn-outline-dark" onClick={() => { setPaymentStatus(""); setPaymentDateFrom(""); setPaymentDateTo(""); }}>
+              Clear
+            </button>
+          )}
+        </div>
         {paymentsLoading ? (
           <div className="p-4 text-center text-slate-500">Loading payments...</div>
         ) : payments.length === 0 ? (
@@ -416,6 +465,7 @@ export default function AdminSubscriptions() {
                   <th className="table-th text-left">Method</th>
                   <th className="table-th text-left">Status</th>
                   <th className="table-th text-left">Date</th>
+                  <th className="table-th text-left">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">
@@ -447,6 +497,20 @@ export default function AdminSubscriptions() {
                     </td>
                     <td className="table-td text-sm text-slate-500">
                       {p.createdAt ? new Date(p.createdAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }) : "—"}
+                    </td>
+                    <td className="table-td">
+                      {p.status === "COMPLETED" && (
+                        <Tooltip content="Refund" placement="top" theme="danger">
+                          <button
+                            type="button"
+                            className="action-btn text-danger-500"
+                            onClick={() => handleRefund(p.id)}
+                            disabled={refundBusy === p.id}
+                          >
+                            <Icon icon="heroicons-outline:arrow-uturn-left" />
+                          </button>
+                        </Tooltip>
+                      )}
                     </td>
                   </tr>
                 ))}

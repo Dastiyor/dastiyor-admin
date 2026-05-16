@@ -4,8 +4,13 @@ import React, { useEffect, useState, useMemo } from "react";
 import Card from "@/components/ui/Card";
 import Icon from "@/components/ui/Icon";
 import Checkbox from "@/components/ui/Checkbox";
+import Textinput from "@/components/ui/Textinput";
+import Textarea from "@/components/ui/Textarea";
+import Select from "@/components/ui/Select";
+import Button from "@/components/ui/Button";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import GlobalFilter from "@/components/partials/table/GlobalFilter";
+import { toast } from "react-toastify";
 import {
   useTable,
   useSortBy,
@@ -18,6 +23,37 @@ export default function AdminNotifications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [unreadOnly, setUnreadOnly] = useState(false);
+
+  const [sendForm, setSendForm] = useState({ title: "", message: "", type: "SYSTEM", link: "", userId: "" });
+  const [sending, setSending] = useState(false);
+
+  const handleSend = async () => {
+    if (!sendForm.title.trim() || !sendForm.message.trim()) {
+      toast.error("Title and message required");
+      return;
+    }
+    setSending(true);
+    try {
+      const body = { ...sendForm };
+      if (!body.userId.trim()) delete body.userId;
+      if (!body.link.trim()) delete body.link;
+      const res = await fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      toast.success(`Sent to ${data.sent} user${data.sent !== 1 ? "s" : ""}`);
+      setSendForm({ title: "", message: "", type: "SYSTEM", link: "", userId: "" });
+      fetchNotifications();
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setSending(false);
+    }
+  };
 
   const fetchNotifications = async () => {
     setLoading(true);
@@ -142,6 +178,60 @@ export default function AdminNotifications() {
   return (
     <div>
       <HomeBredCurbs title="Notifications" />
+
+      <Card title="Send notification" className="mb-5">
+        <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
+          Send to specific user (enter User ID) or leave blank to broadcast to all users.
+        </p>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Textinput
+            label="Title"
+            value={sendForm.title}
+            onChange={(e) => setSendForm({ ...sendForm, title: e.target.value })}
+            placeholder="e.g. Platform Update"
+          />
+          <Select
+            label="Type"
+            options={["SYSTEM", "TASK_UPDATE", "NEW_MESSAGE", "NEW_OFFER", "OFFER_ACCEPTED"]}
+            value={sendForm.type}
+            onChange={(e) => setSendForm({ ...sendForm, type: e.target.value })}
+          />
+          <Textarea
+            label="Message"
+            value={sendForm.message}
+            onChange={(e) => setSendForm({ ...sendForm, message: e.target.value })}
+            placeholder="Notification body..."
+            className="sm:col-span-2"
+          />
+          <Textinput
+            label="Link (optional)"
+            value={sendForm.link}
+            onChange={(e) => setSendForm({ ...sendForm, link: e.target.value })}
+            placeholder="/tasks or /profile"
+          />
+          <Textinput
+            label="User ID (optional — blank = broadcast)"
+            value={sendForm.userId}
+            onChange={(e) => setSendForm({ ...sendForm, userId: e.target.value })}
+            placeholder="Leave blank to send to all users"
+          />
+        </div>
+        <div className="flex items-center gap-3 mt-4">
+          <Button
+            text={sendForm.userId.trim() ? "Send to user" : `Broadcast to all users`}
+            className="btn-dark btn-sm"
+            onClick={handleSend}
+            disabled={sending}
+          />
+          {!sendForm.userId.trim() && (
+            <span className="text-xs text-warning-500 flex items-center gap-1">
+              <Icon icon="heroicons-outline:exclamation-triangle" />
+              Will send to every non-admin user
+            </span>
+          )}
+        </div>
+      </Card>
+
       <Card title="Platform notifications" noborder>
         <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
           View in-app notifications sent to users (new offer, message, task completed, etc.).

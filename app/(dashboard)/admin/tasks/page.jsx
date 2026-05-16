@@ -46,6 +46,11 @@ export default function AdminTasks() {
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState("");
   const [urgencyFilter, setUrgencyFilter] = useState("");
+  const [sortFilter, setSortFilter] = useState("newest");
+  const [searchQ, setSearchQ] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [categories, setCategories] = useState([]);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -73,6 +78,10 @@ export default function AdminTasks() {
       const qs = new URLSearchParams({ limit: "1000" });
       if (statusFilter) qs.set("status", statusFilter);
       if (urgencyFilter) qs.set("urgency", urgencyFilter);
+      if (sortFilter) qs.set("sort", sortFilter);
+      if (searchQ) qs.set("q", searchQ);
+      if (dateFrom) qs.set("from", dateFrom);
+      if (dateTo) qs.set("to", dateTo);
       const res = await fetch(`/api/tasks?${qs.toString()}`, { credentials: "include" });
       if (!res.ok) throw new Error(await res.text());
       const json = await res.json();
@@ -91,7 +100,7 @@ export default function AdminTasks() {
 
   useEffect(() => {
     fetchTasks();
-  }, [statusFilter, urgencyFilter]);
+  }, [statusFilter, urgencyFilter, sortFilter, searchQ, dateFrom, dateTo]);
 
   useEffect(() => {
     let cancelled = false;
@@ -196,6 +205,21 @@ export default function AdminTasks() {
       Header: "Category",
       accessor: "category",
       Cell: (row) => <span className="text-sm text-slate-600 dark:text-slate-300">{row?.cell?.value}</span>,
+    },
+    {
+      Header: "Budget",
+      accessor: "budgetAmountNum",
+      Cell: (row) => {
+        const num = row?.cell?.value;
+        const str = row?.row?.original?.budgetAmount;
+        const type = row?.row?.original?.budgetType;
+        if (type === "negotiable") return <span className="text-xs text-slate-400">Negotiable</span>;
+        return (
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            {num != null ? `${num.toLocaleString()} TJS` : str ?? "—"}
+          </span>
+        );
+      },
     },
     {
       Header: "Urgency",
@@ -310,6 +334,18 @@ export default function AdminTasks() {
         <div className="md:flex justify-between items-center mb-6">
           <Button text="Add Task" className="btn-success btn-sm" onClick={handleCreate} />
           <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                className="form-control py-2"
+                placeholder="Search title / description..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && setSearchQ(searchInput.trim())}
+              />
+              <button className="btn btn-sm btn-dark" onClick={() => setSearchQ(searchInput.trim())}>Search</button>
+              {searchQ && <button className="btn btn-sm btn-outline-dark" onClick={() => { setSearchQ(""); setSearchInput(""); }}>Clear</button>}
+            </div>
             <select
               className="form-control py-2 w-max"
               value={statusFilter}
@@ -331,6 +367,24 @@ export default function AdminTasks() {
               <option value="normal">Normal</option>
               <option value="urgent">Urgent</option>
             </select>
+            <select
+              className="form-control py-2 w-max"
+              value={sortFilter}
+              onChange={(e) => setSortFilter(e.target.value)}
+            >
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="budget-high">Budget: high → low</option>
+              <option value="budget-low">Budget: low → high</option>
+            </select>
+            <div className="flex items-center gap-2">
+              <input type="date" className="form-control py-2" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} title="From date" />
+              <span className="text-slate-400 text-sm">–</span>
+              <input type="date" className="form-control py-2" value={dateTo} onChange={(e) => setDateTo(e.target.value)} title="To date" />
+              {(dateFrom || dateTo) && (
+                <button className="btn btn-sm btn-outline-dark" onClick={() => { setDateFrom(""); setDateTo(""); }}>Clear</button>
+              )}
+            </div>
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
         </div>

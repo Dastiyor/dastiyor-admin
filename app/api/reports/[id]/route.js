@@ -15,6 +15,9 @@ export async function PATCH(request, { params }) {
       where: { id: params.id },
       data: { status },
     });
+    prisma.actionLog.create({
+      data: { action: `admin_report_${status.toLowerCase()}`, entity: "Report", entityId: params.id },
+    }).catch(() => {});
     return NextResponse.json(report);
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });

@@ -9,13 +9,19 @@ export async function GET(request) {
     const skip = (page - 1) * limit;
     const userId = searchParams.get("userId") || undefined;
     const status = searchParams.get("status") || undefined;
-
     const type = searchParams.get("type") || undefined;
+    const from = searchParams.get("from") || undefined;
+    const to = searchParams.get("to") || undefined;
 
     const where = {};
     if (userId) where.userId = userId;
     if (status) where.status = status;
     if (type) where.type = type;
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt.gte = new Date(from);
+      if (to) where.createdAt.lte = new Date(to + "T23:59:59Z");
+    }
 
     const [payments, total] = await Promise.all([
       prisma.payment.findMany({

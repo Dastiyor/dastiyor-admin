@@ -10,18 +10,36 @@ export async function GET(request) {
     const status = searchParams.get("status") || undefined;
     const category = searchParams.get("category") || undefined;
     const urgency = searchParams.get("urgency") || undefined;
+    const q = searchParams.get("q") || undefined;
+    const sort = searchParams.get("sort") || "newest";
+    const from = searchParams.get("from") || undefined;
+    const to = searchParams.get("to") || undefined;
 
     const where = {};
     if (status) where.status = status;
     if (category) where.category = category;
     if (urgency) where.urgency = urgency;
+    if (q) where.OR = [
+      { title: { contains: q, mode: "insensitive" } },
+      { description: { contains: q, mode: "insensitive" } },
+    ];
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt.gte = new Date(from);
+      if (to) where.createdAt.lte = new Date(to + "T23:59:59Z");
+    }
+
+    let orderBy = { createdAt: "desc" };
+    if (sort === "budget-high") orderBy = [{ budgetAmountNum: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }];
+    else if (sort === "budget-low") orderBy = [{ budgetAmountNum: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }];
+    else if (sort === "oldest") orderBy = { createdAt: "asc" };
 
     const [tasks, total] = await Promise.all([
       prisma.task.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy,
         include: {
           user: { select: { id: true, fullName: true, email: true } },
           _count: { select: { responses: true } },

@@ -8,7 +8,6 @@ const GroupChart4 = ({ stats }) => {
       count: stats?.tasks || 0,
       bg: "bg-info-500",
       text: "text-info-500",
-      percent: "25.67% ",
       icon: "heroicons-outline:menu-alt-1",
     },
     {
@@ -16,24 +15,21 @@ const GroupChart4 = ({ stats }) => {
       count: stats?.users || 0,
       bg: "bg-warning-500",
       text: "text-warning-500",
-      percent: "8.67%",
-      icon: "heroicons-outline:chart-pie",
+      icon: "heroicons-outline:users",
     },
     {
       title: "Total Reviews",
       count: stats?.reviews || 0,
       bg: "bg-primary-500",
       text: "text-primary-500",
-      percent: "1.67%  ",
-      icon: "heroicons-outline:clock",
+      icon: "heroicons-outline:star",
     },
     {
       title: "Active Subs",
       count: stats?.subscriptionsActive || 0,
       bg: "bg-success-500",
       text: "text-success-500",
-      percent: "11.67%  ",
-      icon: "heroicons-outline:calculator",
+      icon: "heroicons-outline:credit-card",
     },
   ];
 

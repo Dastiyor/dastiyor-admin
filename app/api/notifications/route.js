@@ -35,3 +35,42 @@ export async function GET(request) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
+
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    const { userId, title, message, type = "SYSTEM", link } = body;
+
+    if (!title?.trim() || !message?.trim()) {
+      return NextResponse.json({ error: "title and message required" }, { status: 400 });
+    }
+
+    if (userId) {
+      const note = await prisma.notification.create({
+        data: { userId, title: title.trim(), message: message.trim(), type, link: link || null },
+      });
+      return NextResponse.json({ sent: 1, notification: note }, { status: 201 });
+    }
+
+    const users = await prisma.user.findMany({
+      where: { role: { not: "ADMIN" } },
+      select: { id: true },
+    });
+
+    if (users.length === 0) return NextResponse.json({ sent: 0 });
+
+    await prisma.notification.createMany({
+      data: users.map((u) => ({
+        userId: u.id,
+        title: title.trim(),
+        message: message.trim(),
+        type,
+        link: link || null,
+      })),
+    });
+
+    return NextResponse.json({ sent: users.length }, { status: 201 });
+  } catch (e) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}

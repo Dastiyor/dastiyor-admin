@@ -66,6 +66,9 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
     try {
         await prisma.task.delete({ where: { id: params.id } });
+        prisma.actionLog.create({
+            data: { action: "admin_delete_task", entity: "Task", entityId: params.id },
+        }).catch(() => {});
         return NextResponse.json({ success: true });
     } catch (e) {
         return NextResponse.json({ error: e.message }, { status: 500 });

@@ -91,8 +91,9 @@ export default function AdminCalendarPage() {
   };
 
   const handleEventClick = (arg) => {
-    const taskId = arg.event.extendedProps?.taskId;
-    if (taskId) window.location.href = "/admin/tasks"; // could link to task detail if you add it
+    const status = arg.event.extendedProps?.status;
+    if (status) window.location.href = `/admin/tasks?status=${status}`;
+    else window.location.href = "/admin/tasks";
   };
 
   const handleClassName = (arg) => {
