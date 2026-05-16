@@ -44,19 +44,27 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [roleFilter, setRoleFilter] = useState("");
+  const [verifiedFilter, setVerifiedFilter] = useState("");
+  const [docsModal, setDocsModal] = useState(null);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const [formData, setFormData] = useState({ fullName: "", email: "", password: "", role: "CUSTOMER", isVerified: false, phone: "" });
+  const [formData, setFormData] = useState({ fullName: "", email: "", password: "", role: "CUSTOMER", isVerified: false, phone: "", balance: "" });
 
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Fetch larger set for client-side pagination
-      const res = await fetch(`/api/users?limit=1000`);
+      const qs = new URLSearchParams({ limit: "1000" });
+      if (roleFilter) qs.set("role", roleFilter);
+      const res = await fetch(`/api/users?${qs.toString()}`);
       if (!res.ok) throw new Error(await res.text());
       const json = await res.json();
-      setUsers(json.data || []);
+      let data = json.data || [];
+      if (verifiedFilter === "true") data = data.filter((u) => u.isVerified);
+      if (verifiedFilter === "false") data = data.filter((u) => !u.isVerified);
+      setUsers(data);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -66,11 +74,11 @@ export default function AdminUsers() {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [roleFilter, verifiedFilter]);
 
   const handleCreate = () => {
     setCurrentUser(null);
-    setFormData({ fullName: "", email: "", password: "", role: "CUSTOMER", isVerified: false, phone: "" });
+    setFormData({ fullName: "", email: "", password: "", role: "CUSTOMER", isVerified: false, phone: "", balance: "" });
     setModalOpen(true);
   };
 
@@ -82,7 +90,8 @@ export default function AdminUsers() {
       password: "",
       role: user.role || "CUSTOMER",
       isVerified: !!user.isVerified,
-      phone: user.phone || ""
+      phone: user.phone || "",
+      balance: user.balance ?? "",
     });
     setModalOpen(true);
   };
@@ -117,6 +126,7 @@ export default function AdminUsers() {
     const method = currentUser ? "PUT" : "POST";
     const body = { ...formData };
     if (currentUser && !body.password) delete body.password;
+    if (body.balance === "" || body.balance === null) delete body.balance;
 
     try {
       const res = await fetch(url, {
@@ -189,13 +199,22 @@ export default function AdminUsers() {
     },
     {
       Header: "Tasks / Responses",
-      accessor: "id", // Dummy accessor for stats
+      accessor: "id",
       Cell: (row) => (
         <span className="text-sm text-slate-600 dark:text-slate-300">
           {row?.row?.original?._count?.tasks ?? 0} tasks / {row?.row?.original?._count?.responses ?? 0} responses
         </span>
       ),
       disableSortBy: true,
+    },
+    {
+      Header: "Balance (TJS)",
+      accessor: "balance",
+      Cell: (row) => (
+        <span className={`text-sm font-medium ${(row?.cell?.value || 0) > 0 ? "text-success-500" : "text-slate-500"}`}>
+          {(row?.cell?.value || 0).toLocaleString()} TJS
+        </span>
+      ),
     },
     {
       Header: "Action",
@@ -210,6 +229,13 @@ export default function AdminUsers() {
                 <Icon icon="heroicons:pencil-square" />
               </button>
             </Tooltip>
+            {user?.verificationDocuments && (
+              <Tooltip content="Verification Docs" placement="top" arrow animation="shift-away">
+                <button className="action-btn text-info-500" type="button" onClick={() => setDocsModal(user)}>
+                  <Icon icon="heroicons:document-check" />
+                </button>
+              </Tooltip>
+            )}
             {isLocked && (
               <Tooltip content="Unlock" placement="top" arrow animation="shift-away">
                 <button className="action-btn text-warning-500" type="button" onClick={() => handleUnlock(user.id)}>
@@ -285,9 +311,29 @@ export default function AdminUsers() {
     <div>
       <HomeBredCurbs title="Users management" />
       <Card noborder>
-        <div className="md:flex justify-between items-center mb-6">
+        <div className="md:flex justify-between items-center mb-6 gap-4 flex-wrap">
           <Button text="Add User" className="btn-success btn-sm" onClick={handleCreate} />
-          <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
+          <div className="flex items-center gap-3 flex-wrap">
+            <select
+              className="form-control py-2 w-max"
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+            >
+              <option value="">All roles</option>
+              <option value="CUSTOMER">Customer</option>
+              <option value="PROVIDER">Provider</option>
+            </select>
+            <select
+              className="form-control py-2 w-max"
+              value={verifiedFilter}
+              onChange={(e) => setVerifiedFilter(e.target.value)}
+            >
+              <option value="">All verification</option>
+              <option value="true">Verified</option>
+              <option value="false">Unverified</option>
+            </select>
+            <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
+          </div>
         </div>
         {error && (
           <p className="text-danger text-sm mb-4 flex items-center gap-2">
@@ -497,7 +543,73 @@ export default function AdminUsers() {
             value={formData.isVerified}
             onChange={(e) => setFormData({ ...formData, isVerified: e.target.checked })}
           />
+          {currentUser && (
+            <Textinput
+              label="Balance (TJS)"
+              type="number"
+              value={formData.balance}
+              onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
+              placeholder="0"
+            />
+          )}
         </div>
+      </Modal>
+
+      <Modal
+        activeModal={!!docsModal}
+        onClose={() => setDocsModal(null)}
+        title={`Verification Docs — ${docsModal?.fullName ?? ""}`}
+        className="max-w-2xl"
+      >
+        {docsModal && (() => {
+          let docs = [];
+          try { docs = JSON.parse(docsModal.verificationDocuments) || []; } catch { docs = []; }
+          return docs.length === 0 ? (
+            <p className="text-slate-500 text-sm">No documents uploaded.</p>
+          ) : (
+            <div className="space-y-3">
+              {docs.map((url, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                  <Icon icon="heroicons:document" className="text-slate-400 text-xl shrink-0" />
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary-500 hover:underline truncate"
+                  >
+                    {url}
+                  </a>
+                </div>
+              ))}
+              <div className="flex gap-2 mt-4">
+                <Button
+                  text="Approve Provider"
+                  className="btn-success btn-sm"
+                  onClick={async () => {
+                    const res = await fetch(`/api/users/${docsModal.id}`, {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ ...docsModal, isVerified: true }),
+                    });
+                    if (res.ok) { setDocsModal(null); fetchUsers(); }
+                  }}
+                />
+                <Button
+                  text="Reject (unverify)"
+                  className="btn-danger btn-sm"
+                  onClick={async () => {
+                    const res = await fetch(`/api/users/${docsModal.id}`, {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ ...docsModal, isVerified: false }),
+                    });
+                    if (res.ok) { setDocsModal(null); fetchUsers(); }
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })()}
       </Modal>
     </div>
   );

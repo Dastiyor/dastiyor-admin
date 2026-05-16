@@ -64,13 +64,17 @@ export default function AdminResponses() {
       ),
     },
     {
-      Header: "Price",
-      accessor: "price",
-      Cell: (row) => (
-        <span className="text-sm font-medium text-slate-900 dark:text-white">
-          {row?.cell?.value ?? "—"}
-        </span>
-      ),
+      Header: "Price (TJS)",
+      accessor: "priceNum",
+      Cell: (row) => {
+        const num = row?.cell?.value;
+        const str = row?.row?.original?.price;
+        return (
+          <span className="text-sm font-medium text-slate-900 dark:text-white">
+            {num != null ? `${num.toLocaleString()} TJS` : str ?? "—"}
+          </span>
+        );
+      },
     },
     {
       Header: "Message",

@@ -77,6 +77,45 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </div>
+
+            <div className="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-3 mt-5 pt-5 border-t border-slate-100 dark:border-slate-700">
+              <div className="bg-success-500 rounded-md p-4 bg-opacity-[0.15] dark:bg-opacity-50 text-center">
+                <div className="text-success-500 mx-auto h-10 w-10 flex items-center justify-center rounded-full bg-white text-2xl mb-4">
+                  <span className="text-base font-bold">TJS</span>
+                </div>
+                <span className="block text-sm text-slate-600 font-medium dark:text-white mb-1">Total Revenue</span>
+                <span className="block text-2xl text-slate-900 dark:text-white font-medium">
+                  {(stats.totalRevenue || 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="bg-primary-500 rounded-md p-4 bg-opacity-[0.15] dark:bg-opacity-50 text-center">
+                <div className="text-primary-500 mx-auto h-10 w-10 flex items-center justify-center rounded-full bg-white text-2xl mb-4">
+                  <span className="text-base font-bold">%</span>
+                </div>
+                <span className="block text-sm text-slate-600 font-medium dark:text-white mb-1">Payment Success</span>
+                <span className="block text-2xl text-slate-900 dark:text-white font-medium">
+                  {stats.paymentSuccessRate || 0}%
+                </span>
+              </div>
+              <div className="bg-warning-500 rounded-md p-4 bg-opacity-[0.15] dark:bg-opacity-50 text-center">
+                <div className="text-warning-500 mx-auto h-10 w-10 flex items-center justify-center rounded-full bg-white text-2xl mb-4">
+                  <span className="text-base font-bold">#</span>
+                </div>
+                <span className="block text-sm text-slate-600 font-medium dark:text-white mb-1">Paid Transactions</span>
+                <span className="block text-2xl text-slate-900 dark:text-white font-medium">
+                  {stats.completedPayments || 0}
+                </span>
+              </div>
+              <div className="bg-danger-500 rounded-md p-4 bg-opacity-[0.15] dark:bg-opacity-50 text-center">
+                <div className="text-danger-500 mx-auto h-10 w-10 flex items-center justify-center rounded-full bg-white text-2xl mb-4">
+                  <span className="text-base font-bold">🔒</span>
+                </div>
+                <span className="block text-sm text-slate-600 font-medium dark:text-white mb-1">Locked Accounts</span>
+                <span className="block text-2xl text-slate-900 dark:text-white font-medium">
+                  {stats.lockedUsers || 0}
+                </span>
+              </div>
+            </div>
           </Card>
 
           <Card title={t("dashboard.taskActivity")}>

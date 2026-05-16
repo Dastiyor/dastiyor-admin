@@ -13,6 +13,8 @@ export default function AdminModeration() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const fetchModeration = async () => {
     try {
@@ -49,6 +51,46 @@ export default function AdminModeration() {
       toast.error(e.message);
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const bulkSetStatus = async (status) => {
+    if (selectedIds.size === 0) return;
+    setBulkBusy(true);
+    try {
+      await Promise.all(
+        [...selectedIds].map((id) =>
+          fetch(`/api/reports/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ status }),
+          })
+        )
+      );
+      toast.success(`${selectedIds.size} reports ${status === "RESOLVED" ? "resolved" : "dismissed"}`);
+      setSelectedIds(new Set());
+      await fetchModeration();
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = (reports) => {
+    if (selectedIds.size === reports.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(reports.map((r) => r.id)));
     }
   };
 
@@ -189,43 +231,83 @@ export default function AdminModeration() {
         </div>
 
         <Card title="Reports (complaints)" noborder className="mt-6">
-          <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
-            User-reported content. Resolve or dismiss each report.
-          </p>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
+              User-reported content. Resolve or dismiss each report.
+            </p>
+            {recentReports.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500">{selectedIds.size} selected</span>
+                <Button
+                  text="Resolve selected"
+                  className="btn-success btn-xs"
+                  onClick={() => bulkSetStatus("RESOLVED")}
+                  disabled={selectedIds.size === 0 || bulkBusy}
+                />
+                <Button
+                  text="Dismiss selected"
+                  className="btn-outline-dark btn-xs"
+                  onClick={() => bulkSetStatus("DISMISSED")}
+                  disabled={selectedIds.size === 0 || bulkBusy}
+                />
+              </div>
+            )}
+          </div>
           {recentReports.length === 0 ? (
             <p className="text-slate-500 text-sm py-4">No open reports.</p>
           ) : (
-            <ul className="divide-y divide-slate-100 dark:divide-slate-700">
-              {recentReports.map((r) => (
-                <li key={r.id} className="py-4 first:pt-0">
-                  <div className="flex flex-col gap-1">
-                    <p className="text-sm text-slate-900 dark:text-white font-medium">{r.reason}</p>
-                    <p className="text-xs text-slate-500">
-                      Reported by {r.reporter?.fullName} ({r.reporter?.email})
-                      {r.targetUser && ` · Against user: ${r.targetUser.fullName}`}
-                      {r.targetTask && ` · Against task: ${r.targetTask.title}`}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {r.createdAt ? new Date(r.createdAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }) : ""}
-                    </p>
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    <Button
-                      text="Resolve"
-                      className="btn-success btn-xs"
-                      onClick={() => setReportStatus(r.id, "RESOLVED")}
-                      disabled={updatingId === r.id}
-                    />
-                    <Button
-                      text="Dismiss"
-                      className="btn-outline-dark btn-xs"
-                      onClick={() => setReportStatus(r.id, "DISMISSED")}
-                      disabled={updatingId === r.id}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <>
+              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 dark:border-slate-700">
+                <input
+                  type="checkbox"
+                  className="table-checkbox"
+                  checked={selectedIds.size === recentReports.length && recentReports.length > 0}
+                  onChange={() => toggleAll(recentReports)}
+                />
+                <span className="text-xs text-slate-500">Select all</span>
+              </div>
+              <ul className="divide-y divide-slate-100 dark:divide-slate-700">
+                {recentReports.map((r) => (
+                  <li key={r.id} className="py-4 first:pt-0">
+                    <div className="flex gap-3">
+                      <input
+                        type="checkbox"
+                        className="table-checkbox mt-1 shrink-0"
+                        checked={selectedIds.has(r.id)}
+                        onChange={() => toggleSelect(r.id)}
+                      />
+                      <div className="flex-1">
+                        <div className="flex flex-col gap-1">
+                          <p className="text-sm text-slate-900 dark:text-white font-medium">{r.reason}</p>
+                          <p className="text-xs text-slate-500">
+                            Reported by {r.reporter?.fullName} ({r.reporter?.email})
+                            {r.targetUser && ` · Against user: ${r.targetUser.fullName}`}
+                            {r.targetTask && ` · Against task: ${r.targetTask.title}`}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            {r.createdAt ? new Date(r.createdAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }) : ""}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            text="Resolve"
+                            className="btn-success btn-xs"
+                            onClick={() => setReportStatus(r.id, "RESOLVED")}
+                            disabled={updatingId === r.id}
+                          />
+                          <Button
+                            text="Dismiss"
+                            className="btn-outline-dark btn-xs"
+                            onClick={() => setReportStatus(r.id, "DISMISSED")}
+                            disabled={updatingId === r.id}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
         </Card>
 

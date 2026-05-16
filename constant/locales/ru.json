@@ -26,6 +26,8 @@
     "reviews": "Отзывы и жалобы",
     "notifications": "Уведомления",
     "moderation": "Инструменты модерации",
+    "conversations": "Переписки",
+    "pushSubscriptions": "Push-подписки",
     "audit": "Журнал действий",
     "calendar": "Календарь",
     "settings": "Настройки"

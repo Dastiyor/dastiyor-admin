@@ -16,6 +16,10 @@ export async function GET(request, { params }) {
                 lockedUntil: true,
                 googleId: true,
                 appleId: true,
+                balance: true,
+                verificationDocuments: true,
+                bio: true,
+                skills: true,
                 createdAt: true,
             },
         });
@@ -32,7 +36,7 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
     try {
         const body = await request.json();
-        const { fullName, email, role, phone, isVerified, password, unlock } = body;
+        const { fullName, email, role, phone, isVerified, password, unlock, balance } = body;
 
         const data = {
             fullName,
@@ -45,6 +49,10 @@ export async function PUT(request, { params }) {
         if (unlock) {
             data.loginAttempts = 0;
             data.lockedUntil = null;
+        }
+
+        if (balance !== undefined && balance !== null) {
+            data.balance = parseFloat(balance) || 0;
         }
 
         if (password) {

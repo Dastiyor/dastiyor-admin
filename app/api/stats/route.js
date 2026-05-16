@@ -33,16 +33,20 @@ export async function GET() {
       tasksCompleted,
       reviewsCount,
       subscriptionsActive,
+      lockedUsersCount,
       tasksCreatedAt,
       recentTasks,
       recentUsers,
+      revenueData,
+      paymentCounts,
     ] = await Promise.all([
-      prisma.user.count(),
+      prisma.user.count({ where: { role: { not: "ADMIN" } } }),
       prisma.task.count(),
       prisma.task.count({ where: { status: "OPEN" } }),
       prisma.task.count({ where: { status: "COMPLETED" } }),
       prisma.review.count(),
       prisma.subscription.count({ where: { isActive: true } }),
+      prisma.user.count({ where: { lockedUntil: { gt: now } } }),
       prisma.task.findMany({
         where: { createdAt: { gte: start } },
         select: { createdAt: true },
@@ -60,6 +64,15 @@ export async function GET() {
         take: 5,
         orderBy: { createdAt: "desc" },
       }),
+      prisma.payment.aggregate({
+        where: { status: "COMPLETED" },
+        _sum: { amount: true },
+        _count: { id: true },
+      }),
+      prisma.payment.groupBy({
+        by: ["status"],
+        _count: { id: true },
+      }),
     ]);
 
     for (const t of tasksCreatedAt) {
@@ -69,6 +82,9 @@ export async function GET() {
       if (idx !== undefined) buckets[idx].count += 1;
     }
 
+    const totalPayments = paymentCounts.reduce((s, p) => s + p._count.id, 0);
+    const completedPayments = paymentCounts.find((p) => p.status === "COMPLETED")?._count.id || 0;
+
     return NextResponse.json({
       users: usersCount,
       tasks: tasksCount,
@@ -76,6 +92,10 @@ export async function GET() {
       tasksCompleted,
       reviews: reviewsCount,
       subscriptionsActive,
+      lockedUsers: lockedUsersCount,
+      totalRevenue: revenueData._sum.amount || 0,
+      completedPayments,
+      paymentSuccessRate: totalPayments > 0 ? Math.round((completedPayments / totalPayments) * 100) : 0,
       taskActivity: {
         labels: buckets.map((b) => b.label),
         data: buckets.map((b) => b.count),

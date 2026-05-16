@@ -29,6 +29,8 @@ export async function GET(request) {
           lockedUntil: true,
           googleId: true,
           appleId: true,
+          balance: true,
+          verificationDocuments: true,
           createdAt: true,
           _count: {
             select: { tasks: true, responses: true, reviewsReceived: true },
