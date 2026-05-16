@@ -22,7 +22,13 @@ const BasicArea = ({
       curve: "smooth",
       width: 4,
     },
-    colors: ["#4669FA"],
+    colors: ["#4669FA", "#50C793", "#FA916B", "#F1595C"],
+    legend: {
+      show: series.length > 1,
+      position: "top",
+      fontFamily: "Inter",
+      labels: { colors: isDark ? "#CBD5E1" : "#475569" },
+    },
     tooltip: {
       theme: "dark",
     },

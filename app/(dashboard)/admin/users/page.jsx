@@ -11,6 +11,8 @@ import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
 import GlobalFilter from "@/components/partials/table/GlobalFilter";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
+import TableSkeleton from "@/components/ui/TableSkeleton";
+import { exportCsv } from "@/lib/exportCsv";
 import {
   useTable,
   useRowSelect,
@@ -46,6 +48,7 @@ export default function AdminUsers() {
 
   const [roleFilter, setRoleFilter] = useState("");
   const [verifiedFilter, setVerifiedFilter] = useState("");
+  const [userSearch, setUserSearch] = useState("");
   const [docsModal, setDocsModal] = useState(null);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -64,6 +67,12 @@ export default function AdminUsers() {
       let data = json.data || [];
       if (verifiedFilter === "true") data = data.filter((u) => u.isVerified);
       if (verifiedFilter === "false") data = data.filter((u) => !u.isVerified);
+      if (userSearch.trim()) {
+        const q = userSearch.trim().toLowerCase();
+        data = data.filter((u) =>
+          u.fullName?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q) || u.phone?.includes(q)
+        );
+      }
       setUsers(data);
     } catch (e) {
       setError(e.message);
@@ -74,7 +83,7 @@ export default function AdminUsers() {
 
   useEffect(() => {
     fetchUsers();
-  }, [roleFilter, verifiedFilter]);
+  }, [roleFilter, verifiedFilter, userSearch]);
 
   const handleCreate = () => {
     setCurrentUser(null);
@@ -312,8 +321,27 @@ export default function AdminUsers() {
       <HomeBredCurbs title="Users management" />
       <Card noborder>
         <div className="md:flex justify-between items-center mb-6 gap-4 flex-wrap">
-          <Button text="Add User" className="btn-success btn-sm" onClick={handleCreate} />
+          <div className="flex items-center gap-2">
+            <Button text="Add User" className="btn-success btn-sm" onClick={handleCreate} />
+            <button
+              className="btn btn-sm btn-outline-dark"
+              onClick={() => exportCsv("users.csv", users.map((u) => ({
+                id: u.id, fullName: u.fullName, email: u.email, role: u.role,
+                phone: u.phone || "", isVerified: u.isVerified, balance: u.balance || 0,
+                createdAt: u.createdAt,
+              })))}
+            >
+              Export CSV
+            </button>
+          </div>
           <div className="flex items-center gap-3 flex-wrap">
+            <input
+              type="text"
+              className="form-control py-2"
+              placeholder="Search name / email / phone..."
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+            />
             <select
               className="form-control py-2 w-max"
               value={roleFilter}
@@ -342,7 +370,7 @@ export default function AdminUsers() {
           </p>
         )}
         {loading ? (
-          <div className="p-5 text-center">Loading...</div>
+          <TableSkeleton rows={8} cols={6} />
         ) : (
           <>
             <div className="overflow-x-auto -mx-6">

@@ -12,6 +12,8 @@ import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
 import GlobalFilter from "@/components/partials/table/GlobalFilter";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
+import TableSkeleton from "@/components/ui/TableSkeleton";
+import { exportCsv } from "@/lib/exportCsv";
 import {
   useTable,
   useRowSelect,
@@ -332,7 +334,19 @@ export default function AdminTasks() {
       <HomeBredCurbs title="Tasks management" />
       <Card noborder>
         <div className="md:flex justify-between items-center mb-6">
-          <Button text="Add Task" className="btn-success btn-sm" onClick={handleCreate} />
+          <div className="flex items-center gap-2">
+            <Button text="Add Task" className="btn-success btn-sm" onClick={handleCreate} />
+            <button
+              className="btn btn-sm btn-outline-dark"
+              onClick={() => exportCsv("tasks.csv", tasks.map((t) => ({
+                id: t.id, title: t.title, category: t.category, status: t.status,
+                urgency: t.urgency, budgetType: t.budgetType, budgetAmount: t.budgetAmountNum ?? t.budgetAmount ?? "",
+                city: t.city, createdAt: t.createdAt, user: t.user?.email || "",
+              })))}
+            >
+              Export CSV
+            </button>
+          </div>
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex gap-2">
               <input
@@ -389,7 +403,7 @@ export default function AdminTasks() {
           </div>
         </div>
         {loading ? (
-          <div className="p-5 text-center">Loading...</div>
+          <TableSkeleton rows={8} cols={7} />
         ) : (
           <>
             <div className="overflow-x-auto -mx-6">

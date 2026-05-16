@@ -5,31 +5,25 @@ import Card from "@/components/ui/Card";
 import Textinput from "@/components/ui/Textinput";
 import Switch from "@/components/ui/Switch";
 import Button from "@/components/ui/Button";
-import { useTranslation } from "@/context/LanguageContext";
 import { toast } from "react-toastify";
 
 const defaultPayment = {
-  currencyCode: "USD",
-  currencySymbol: "$",
+  currencyCode: "TJS",
+  currencySymbol: "TJS",
   commission: "10",
-  stripeActive: true,
-  stripePublicKey: "",
-  stripeSecretKey: "",
-  paypalActive: false,
-  paypalClientId: "",
-  paypalSecretKey: "",
-  paypalMode: "sandbox",
+  smartpayActive: true,
+  smartpayMerchantId: "",
+  smartpaySecretKey: "",
+  smartpayMode: "sandbox",
   bankActive: false,
   bankName: "",
   accountHolder: "",
   accountNumber: "",
-  routingNumber: "",
   swift: "",
   bankAddress: "",
 };
 
 const PaymentSettings = () => {
-  const { t } = useTranslation();
   const [data, setData] = useState(defaultPayment);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,7 +57,7 @@ const PaymentSettings = () => {
         body: JSON.stringify(data),
       });
       if (!res.ok) throw new Error(await res.text());
-      toast.success(t("settings.saveChanges") || "Saved");
+      toast.success("Saved");
     } catch (e) {
       toast.error(e.message);
     } finally {
@@ -75,44 +69,69 @@ const PaymentSettings = () => {
 
   return (
     <div className="grid grid-cols-1 gap-5">
-      <Card title={t("settings.payment.general")}>
+      <Card title="General payment settings">
         <div className="grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-5">
-          <Textinput label={t("settings.payment.currencyCode")} type="text" placeholder="USD" value={data.currencyCode} onChange={(e) => setData({ ...data, currencyCode: e.target.value })} />
-          <Textinput label={t("settings.payment.currencySymbol")} type="text" placeholder="$" value={data.currencySymbol} onChange={(e) => setData({ ...data, currencySymbol: e.target.value })} />
-          <Textinput label={t("settings.payment.commission")} type="number" placeholder="10" value={data.commission} onChange={(e) => setData({ ...data, commission: e.target.value })} />
+          <Textinput
+            label="Currency code"
+            type="text"
+            placeholder="TJS"
+            value={data.currencyCode}
+            onChange={(e) => setData({ ...data, currencyCode: e.target.value })}
+          />
+          <Textinput
+            label="Currency symbol"
+            type="text"
+            placeholder="TJS"
+            value={data.currencySymbol}
+            onChange={(e) => setData({ ...data, currencySymbol: e.target.value })}
+          />
+          <Textinput
+            label="Platform commission (%)"
+            type="number"
+            placeholder="10"
+            value={data.commission}
+            onChange={(e) => setData({ ...data, commission: e.target.value })}
+          />
         </div>
       </Card>
 
-      <Card title={t("settings.payment.stripe")}>
+      <Card title="SmartPay configuration">
+        <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
+          SmartPay is the payment provider for Dastiyor. Amounts processed in TJS (Tajik Somoni).
+        </p>
         <div className="space-y-4">
           <div className="flex justify-between items-center mb-4">
-            <label className="form-label font-medium">{t("settings.payment.enableStripe")}</label>
-            <Switch value={data.stripeActive} onChange={() => setData({ ...data, stripeActive: !data.stripeActive })} />
+            <label className="form-label font-medium">Enable SmartPay</label>
+            <Switch
+              value={data.smartpayActive}
+              onChange={() => setData({ ...data, smartpayActive: !data.smartpayActive })}
+            />
           </div>
-          {data.stripeActive && (
+          {data.smartpayActive && (
             <div className="grid lg:grid-cols-2 grid-cols-1 gap-5">
-              <Textinput label={t("settings.payment.stripePublicKey")} type="text" placeholder="pk_test_..." value={data.stripePublicKey} onChange={(e) => setData({ ...data, stripePublicKey: e.target.value })} />
-              <Textinput label={t("settings.payment.stripeSecretKey")} type="password" placeholder="sk_test_..." value={data.stripeSecretKey} onChange={(e) => setData({ ...data, stripeSecretKey: e.target.value })} />
-            </div>
-          )}
-        </div>
-      </Card>
-
-      <Card title={t("settings.payment.paypal")}>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center mb-4">
-            <label className="form-label font-medium">{t("settings.payment.enablePaypal")}</label>
-            <Switch value={data.paypalActive} onChange={() => setData({ ...data, paypalActive: !data.paypalActive })} />
-          </div>
-          {data.paypalActive && (
-            <div className="grid lg:grid-cols-2 grid-cols-1 gap-5">
-              <Textinput label={t("settings.payment.paypalClientId")} type="text" placeholder="Client ID" value={data.paypalClientId} onChange={(e) => setData({ ...data, paypalClientId: e.target.value })} />
-              <Textinput label={t("settings.payment.paypalSecretKey")} type="password" placeholder="Secret Key" value={data.paypalSecretKey} onChange={(e) => setData({ ...data, paypalSecretKey: e.target.value })} />
-              <div className="lg:col-span-2">
-                <label className="form-label block mb-2">{t("settings.payment.mode")}</label>
-                <select className="form-control py-2" value={data.paypalMode} onChange={(e) => setData({ ...data, paypalMode: e.target.value })}>
-                  <option value="sandbox">{t("settings.payment.sandbox")}</option>
-                  <option value="live">{t("settings.payment.live")}</option>
+              <Textinput
+                label="Merchant ID"
+                type="text"
+                placeholder="smartpay_merchant_..."
+                value={data.smartpayMerchantId}
+                onChange={(e) => setData({ ...data, smartpayMerchantId: e.target.value })}
+              />
+              <Textinput
+                label="Secret key"
+                type="password"
+                placeholder="sk_..."
+                value={data.smartpaySecretKey}
+                onChange={(e) => setData({ ...data, smartpaySecretKey: e.target.value })}
+              />
+              <div>
+                <label className="form-label block mb-2">Mode</label>
+                <select
+                  className="form-control py-2"
+                  value={data.smartpayMode}
+                  onChange={(e) => setData({ ...data, smartpayMode: e.target.value })}
+                >
+                  <option value="sandbox">Sandbox (test)</option>
+                  <option value="live">Live (production)</option>
                 </select>
               </div>
             </div>
@@ -120,21 +139,23 @@ const PaymentSettings = () => {
         </div>
       </Card>
 
-      <Card title={t("settings.payment.bank")}>
+      <Card title="Bank transfer">
         <div className="space-y-4">
           <div className="flex justify-between items-center mb-4">
-            <label className="form-label font-medium">{t("settings.payment.enableBank")}</label>
-            <Switch value={data.bankActive} onChange={() => setData({ ...data, bankActive: !data.bankActive })} />
+            <label className="form-label font-medium">Enable bank transfer</label>
+            <Switch
+              value={data.bankActive}
+              onChange={() => setData({ ...data, bankActive: !data.bankActive })}
+            />
           </div>
           {data.bankActive && (
             <div className="grid lg:grid-cols-2 grid-cols-1 gap-5">
-              <Textinput label={t("settings.payment.bankName")} type="text" placeholder={t("settings.payment.bankName")} value={data.bankName} onChange={(e) => setData({ ...data, bankName: e.target.value })} />
-              <Textinput label={t("settings.payment.accountHolder")} type="text" placeholder={t("settings.payment.accountHolder")} value={data.accountHolder} onChange={(e) => setData({ ...data, accountHolder: e.target.value })} />
-              <Textinput label={t("settings.payment.accountNumber")} type="text" placeholder={t("settings.payment.accountNumber")} value={data.accountNumber} onChange={(e) => setData({ ...data, accountNumber: e.target.value })} />
-              <Textinput label={t("settings.payment.routingNumber")} type="text" placeholder={t("settings.payment.routingNumber")} value={data.routingNumber} onChange={(e) => setData({ ...data, routingNumber: e.target.value })} />
-              <Textinput label={t("settings.payment.swift")} type="text" placeholder={t("settings.payment.swift")} value={data.swift} onChange={(e) => setData({ ...data, swift: e.target.value })} />
+              <Textinput label="Bank name" type="text" value={data.bankName} onChange={(e) => setData({ ...data, bankName: e.target.value })} />
+              <Textinput label="Account holder" type="text" value={data.accountHolder} onChange={(e) => setData({ ...data, accountHolder: e.target.value })} />
+              <Textinput label="Account number" type="text" value={data.accountNumber} onChange={(e) => setData({ ...data, accountNumber: e.target.value })} />
+              <Textinput label="SWIFT / BIC" type="text" value={data.swift} onChange={(e) => setData({ ...data, swift: e.target.value })} />
               <div className="lg:col-span-2">
-                <Textinput label={t("settings.payment.bankAddress")} type="text" placeholder={t("settings.payment.bankAddress")} value={data.bankAddress} onChange={(e) => setData({ ...data, bankAddress: e.target.value })} />
+                <Textinput label="Bank address" type="text" value={data.bankAddress} onChange={(e) => setData({ ...data, bankAddress: e.target.value })} />
               </div>
             </div>
           )}
@@ -142,7 +163,7 @@ const PaymentSettings = () => {
       </Card>
 
       <div className="text-right">
-        <Button text={t("settings.saveChanges")} className="btn-dark w-full sm:w-auto" onClick={handleSave} disabled={saving} />
+        <Button text="Save changes" className="btn-dark w-full sm:w-auto" onClick={handleSave} disabled={saving} />
       </div>
     </div>
   );

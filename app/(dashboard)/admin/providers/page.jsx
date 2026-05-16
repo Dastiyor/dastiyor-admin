@@ -5,6 +5,7 @@ import Card from "@/components/ui/Card";
 import Icon from "@/components/ui/Icon";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import GlobalFilter from "@/components/partials/table/GlobalFilter";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import {
   useTable,
   useSortBy,
@@ -167,7 +168,7 @@ export default function AdminProviders() {
           </p>
         )}
         {loading ? (
-          <div className="p-5 text-center text-slate-500">Loading...</div>
+          <TableSkeleton rows={10} cols={8} />
         ) : (
           <>
             <div className="overflow-x-auto -mx-6">

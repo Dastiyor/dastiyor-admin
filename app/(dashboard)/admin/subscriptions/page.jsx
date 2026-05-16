@@ -9,6 +9,7 @@ import Textinput from "@/components/ui/Textinput";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import GlobalFilter from "@/components/partials/table/GlobalFilter";
 import Tooltip from "@/components/ui/Tooltip";
+import { exportCsv } from "@/lib/exportCsv";
 import {
   useTable,
   useSortBy,
@@ -449,6 +450,16 @@ export default function AdminSubscriptions() {
               Clear
             </button>
           )}
+          <button
+            className="btn btn-sm btn-outline-dark ml-auto"
+            onClick={() => exportCsv("payments.csv", payments.map((p) => ({
+              id: p.id, user: p.user?.email || "", amount: p.amount, currency: p.currency || "TJS",
+              type: p.type || "", plan: p.plan || "", paymentMethod: p.paymentMethod || "",
+              status: p.status, createdAt: p.createdAt,
+            })))}
+          >
+            Export CSV
+          </button>
         </div>
         {paymentsLoading ? (
           <div className="p-4 text-center text-slate-500">Loading payments...</div>

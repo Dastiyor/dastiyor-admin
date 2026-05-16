@@ -6,6 +6,7 @@ import Icon from "@/components/ui/Icon";
 import Checkbox from "@/components/ui/Checkbox";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import GlobalFilter from "@/components/partials/table/GlobalFilter";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import {
   useTable,
   useSortBy,
@@ -18,6 +19,7 @@ export default function AdminReviews() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showHidden, setShowHidden] = useState(true);
+  const [minRating, setMinRating] = useState(0);
 
   const fetchReviews = async () => {
     setLoading(true);
@@ -157,10 +159,11 @@ export default function AdminReviews() {
   ];
 
   const columns = useMemo(() => COLUMNS, []);
-  const data = useMemo(
-    () => (showHidden ? reviews : reviews.filter((r) => !r.hidden)),
-    [reviews, showHidden]
-  );
+  const data = useMemo(() => {
+    let filtered = showHidden ? reviews : reviews.filter((r) => !r.hidden);
+    if (minRating > 0) filtered = filtered.filter((r) => (r.rating || 0) <= minRating);
+    return filtered;
+  }, [reviews, showHidden, minRating]);
 
   const tableInstance = useTable(
     {
@@ -198,12 +201,25 @@ export default function AdminReviews() {
       <HomeBredCurbs title="Reviews & complaints" />
       <Card title="Reviews" noborder>
         <div className="md:flex justify-between items-center mb-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Checkbox
               label="Show hidden"
               value={showHidden}
               onChange={(e) => setShowHidden(e.target.checked)}
             />
+            <select
+              className="form-control py-2 w-max"
+              value={minRating}
+              onChange={(e) => setMinRating(Number(e.target.value))}
+              title="Show reviews with rating ≤"
+            >
+              <option value={0}>All ratings</option>
+              <option value={1}>1★ only</option>
+              <option value={2}>≤ 2★</option>
+              <option value={3}>≤ 3★</option>
+              <option value={4}>≤ 4★</option>
+            </select>
+            <span className="text-xs text-slate-400">{data.length} reviews</span>
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
         </div>
@@ -214,7 +230,7 @@ export default function AdminReviews() {
           </p>
         )}
         {loading ? (
-          <div className="p-5 text-center text-slate-500">Loading...</div>
+          <TableSkeleton rows={8} cols={7} />
         ) : (
           <>
             <div className="overflow-x-auto -mx-6">

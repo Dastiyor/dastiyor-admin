@@ -71,8 +71,14 @@ const AdminDashboard = () => {
                     {t("dashboard.taskStatus")}
                   </span>
                   <DonutChart
-                    series={[stats.tasksCompleted || 0, stats.tasksOpen || 0]}
-                    labels={[t("dashboard.completed"), t("dashboard.open")]}
+                    series={[
+                      stats.tasksOpen || 0,
+                      stats.tasksInProgress || 0,
+                      stats.tasksCompleted || 0,
+                      stats.tasksCancelled || 0,
+                    ]}
+                    labels={["Open", "In Progress", "Completed", "Cancelled"]}
+                    chartColors={["#4669FA", "#FA916B", "#50C793", "#F1595C"]}
                   />
                 </div>
               </div>
@@ -122,12 +128,18 @@ const AdminDashboard = () => {
             <BasicArea
               height={310}
               series={[
-                {
-                  name: "Tasks Created",
-                  data: stats.taskActivity?.data || [],
-                },
+                { name: "Tasks Created", data: stats.taskActivity?.tasks || [] },
+                { name: "Users Joined", data: stats.taskActivity?.users || [] },
               ]}
               categories={stats.taskActivity?.labels || []}
+            />
+          </Card>
+
+          <Card title="Monthly Revenue (TJS)">
+            <BasicArea
+              height={260}
+              series={[{ name: "Revenue (TJS)", data: stats.revenueActivity?.data || [] }]}
+              categories={stats.revenueActivity?.labels || []}
             />
           </Card>
         </div>

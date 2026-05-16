@@ -4,15 +4,12 @@ const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 import useDarkMode from "@/hooks/useDarkMode";
 import { colors } from "@/constant/data";
 
-const DonutChart = ({ height = 113, series = [70, 30], labels = ["Complete", "Left"] }) => {
+const DonutChart = ({ height = 113, series = [70, 30], labels = ["Complete", "Left"], chartColors }) => {
   const [isDark] = useDarkMode();
   const chartTextColor = isDark ? "#f8fafc" : "#475569";
 
-  function colorOpacity(color, opacity) {
-    // coerce values so ti is between 0 and 1.
-    var _opacity = Math.round(Math.min(Math.max(opacity || 1, 0), 1) * 255);
-    return color + _opacity.toString(16).toUpperCase();
-  }
+  const defaultColors = [colors.info, colors.success, colors.warning, colors.danger, colors.primary];
+  const resolvedColors = chartColors || defaultColors.slice(0, series.length);
 
   const options = {
     labels: labels,
@@ -20,7 +17,7 @@ const DonutChart = ({ height = 113, series = [70, 30], labels = ["Complete", "Le
       enabled: false,
     },
 
-    colors: [colors.info, colorOpacity(colors.info, 0.16)],
+    colors: resolvedColors,
     legend: {
       position: "bottom",
       fontSize: "12px",
