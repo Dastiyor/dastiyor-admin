@@ -5,7 +5,6 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useRouter } from "next/navigation";
 import Checkbox from "@/components/ui/Checkbox";
-import Link from "next/link";
 import { useSelector, useDispatch } from "react-redux";
 import { handleLogin } from "./store";
 import { toast } from "react-toastify";
@@ -86,12 +85,15 @@ const LoginForm = () => {
           onChange={() => setChecked(!checked)}
           label={t("login.rememberMe")}
         />
-        <Link
-          href="/forgot-password"
+        {/* ponytail: reset lives on the main site (same users table), no mailer here */}
+        <a
+          href="https://www.dastiyor.com/forgot-password"
+          target="_blank"
+          rel="noopener noreferrer"
           className="text-sm text-slate-800 dark:text-slate-400 leading-6 font-medium"
         >
           {t("login.forgotPassword")}{" "}
-        </Link>
+        </a>
       </div>
 
       <button type="submit" className="btn btn-dark block w-full text-center" disabled={submitting}>

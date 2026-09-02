@@ -2,7 +2,6 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { ToastContainer } from "react-toastify";
 import Header from "@/components/partials/header";
 import Sidebar from "@/components/partials/sidebar";
 import Settings from "@/components/partials/settings";
@@ -106,7 +105,6 @@ export default function RootLayout({ children }) {
       ${navbarType === "floating" ? "has-floating" : ""}
       `}
     >
-      <ToastContainer />
       <Header className={width > breakpoints.xl ? switchHeaderClass() : ""} />
       {menuType === "vertical" && width > breakpoints.xl && !menuHidden && (
         <Sidebar />
