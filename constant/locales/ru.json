@@ -52,6 +52,11 @@
     "viewAll": "Смотреть все",
     "noNotifications": "Нет новых уведомлений"
   },
+  "activity": {
+    "userJoined": "Новый пользователь",
+    "taskCreated": "Новое задание",
+    "reportOpened": "Новая жалоба"
+  },
   "dashboard": {
     "overview": "Обзор",
     "taskStatus": "Статус задач",
