@@ -364,37 +364,6 @@ export const topMenu = [
   },
 ];
 
-export const notifications = [
-  {
-    title: "Your order is placed",
-    desc: "Amet minim mollit non deser unt ullamco est sit aliqua.",
-
-    image: "/assets/images/all-img/user.png",
-    link: "#",
-  },
-  {
-    title: "Congratulations Darlene  🎉",
-    desc: "Won the monthly best seller badge",
-    unread: true,
-    image: "/assets/images/all-img/user2.png",
-    link: "#",
-  },
-  {
-    title: "Revised Order 👋",
-    desc: "Won the monthly best seller badge",
-
-    image: "/assets/images/all-img/user3.png",
-    link: "#",
-  },
-  {
-    title: "Brooklyn Simmons",
-    desc: "Added you to Top Secret Project group...",
-
-    image: "/assets/images/all-img/user4.png",
-    link: "#",
-  },
-];
-
 export const message = [
   {
     title: "Wade Warren",
