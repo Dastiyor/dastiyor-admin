@@ -364,68 +364,6 @@ export const topMenu = [
   },
 ];
 
-export const message = [
-  {
-    title: "Wade Warren",
-    desc: "Hi! How are you doing?.....",
-    active: true,
-    hasnotifaction: true,
-    notification_count: 1,
-    image: "/assets/images/all-img/user1.png",
-    link: "#",
-  },
-  {
-    title: "Savannah Nguyen",
-    desc: "Hi! How are you doing?.....",
-    active: false,
-    hasnotifaction: false,
-    image: "/assets/images/all-img/user2.png",
-    link: "#",
-  },
-  {
-    title: "Ralph Edwards",
-    desc: "Hi! How are you doing?.....",
-    active: false,
-    hasnotifaction: true,
-    notification_count: 8,
-    image: "/assets/images/all-img/user3.png",
-    link: "#",
-  },
-  {
-    title: "Cody Fisher",
-    desc: "Hi! How are you doing?.....",
-    active: true,
-    hasnotifaction: false,
-    image: "/assets/images/all-img/user4.png",
-    link: "#",
-  },
-  {
-    title: "Savannah Nguyen",
-    desc: "Hi! How are you doing?.....",
-    active: false,
-    hasnotifaction: false,
-    image: "/assets/images/all-img/user2.png",
-    link: "#",
-  },
-  {
-    title: "Ralph Edwards",
-    desc: "Hi! How are you doing?.....",
-    active: false,
-    hasnotifaction: true,
-    notification_count: 8,
-    image: "/assets/images/all-img/user3.png",
-    link: "#",
-  },
-  {
-    title: "Cody Fisher",
-    desc: "Hi! How are you doing?.....",
-    active: true,
-    hasnotifaction: false,
-    image: "/assets/images/all-img/user4.png",
-    link: "#",
-  },
-];
-
 export const colors = {
   primary: "#4669FA",
   secondary: "#A0AEC0",
