@@ -38,6 +38,27 @@ export async function PUT(request, { params }) {
         const body = await request.json();
         const { fullName, email, role, phone, isVerified, password, unlock, balance } = body;
 
+        const existing = await prisma.user.findUnique({
+            where: { id: params.id },
+            select: { role: true },
+        });
+        if (!existing) {
+            return NextResponse.json({ error: "User not found" }, { status: 404 });
+        }
+        // The panel does not mint admins; scripts/create-admin.js does.
+        if (role === "ADMIN" && existing.role !== "ADMIN") {
+            return NextResponse.json({ error: "Cannot grant admin role" }, { status: 403 });
+        }
+        if (existing.role === "ADMIN" && role !== "ADMIN") {
+            const admins = await prisma.user.count({ where: { role: "ADMIN" } });
+            if (admins <= 1) {
+                return NextResponse.json(
+                    { error: "Cannot demote the last admin" },
+                    { status: 409 }
+                );
+            }
+        }
+
         const data = {
             fullName,
             email,
@@ -79,6 +100,19 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
     try {
+        const target = await prisma.user.findUnique({
+            where: { id: params.id },
+            select: { role: true },
+        });
+        if (target?.role === "ADMIN") {
+            const admins = await prisma.user.count({ where: { role: "ADMIN" } });
+            if (admins <= 1) {
+                return NextResponse.json(
+                    { error: "Cannot delete the last admin" },
+                    { status: 409 }
+                );
+            }
+        }
         await prisma.user.delete({ where: { id: params.id } });
         prisma.actionLog.create({
             data: { action: "admin_delete_user", entity: "User", entityId: params.id },

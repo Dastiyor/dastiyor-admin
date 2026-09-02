@@ -77,7 +77,8 @@ export async function POST(request) {
     const bcrypt = require("bcryptjs");
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const matchRole = ["CUSTOMER", "PROVIDER", "ADMIN"].includes(role) ? role : "CUSTOMER";
+    // No admin creation through the panel — use scripts/create-admin.js.
+    const matchRole = ["CUSTOMER", "PROVIDER"].includes(role) ? role : "CUSTOMER";
 
     const newUser = await prisma.user.create({
       data: {

@@ -562,7 +562,9 @@ export default function AdminUsers() {
           />
           <Select
             label="Role"
-            options={["CUSTOMER", "PROVIDER", "ADMIN"]}
+            // ADMIN is offered only for an account that already has it, so editing
+            // the existing admin does not silently blank the select.
+            options={formData.role === "ADMIN" ? ["CUSTOMER", "PROVIDER", "ADMIN"] : ["CUSTOMER", "PROVIDER"]}
             value={formData.role}
             onChange={(e) => setFormData({ ...formData, role: e.target.value })}
           />
