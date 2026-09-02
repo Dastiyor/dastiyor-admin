@@ -55,7 +55,9 @@
   "activity": {
     "userJoined": "Новый пользователь",
     "taskCreated": "Новое задание",
-    "reportOpened": "Новая жалоба"
+    "reportOpened": "Новая жалоба",
+    "taskCompleted": "Задание выполнено",
+    "reviewPosted": "Новый отзыв"
   },
   "dashboard": {
     "overview": "Обзор",

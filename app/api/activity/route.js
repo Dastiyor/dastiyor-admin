@@ -15,7 +15,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "8", 10)));
 
-    const [users, tasks, reports] = await Promise.all([
+    const [users, tasks, reports, completed, reviews] = await Promise.all([
       prisma.user.findMany({
         take: limit,
         where: { role: { not: "ADMIN" } },
@@ -32,6 +32,24 @@ export async function GET(request) {
         where: { status: "OPEN" },
         orderBy: { createdAt: "desc" },
         select: { id: true, reason: true, createdAt: true },
+      }),
+      // Task has no completedAt column, so updatedAt is the only completion
+      // timestamp available — a later edit to a done task will resurface it.
+      prisma.task.findMany({
+        take: limit,
+        where: { status: "COMPLETED" },
+        orderBy: { updatedAt: "desc" },
+        select: { id: true, title: true, city: true, updatedAt: true },
+      }),
+      prisma.review.findMany({
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          rating: true,
+          createdAt: true,
+          reviewed: { select: { fullName: true } },
+        },
       }),
     ]);
 
@@ -59,6 +77,22 @@ export async function GET(request) {
         meta: null,
         createdAt: r.createdAt,
         link: "/admin/moderation",
+      })),
+      ...completed.map((t) => ({
+        id: `done-${t.id}`,
+        type: "TASK_COMPLETED",
+        name: t.title,
+        meta: t.city,
+        createdAt: t.updatedAt,
+        link: "/admin/tasks",
+      })),
+      ...reviews.map((r) => ({
+        id: `review-${r.id}`,
+        type: "REVIEW_POSTED",
+        name: r.reviewed?.fullName || "",
+        meta: `${r.rating}\u2605`,
+        createdAt: r.createdAt,
+        link: "/admin/reviews",
       })),
     ]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
