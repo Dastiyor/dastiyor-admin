@@ -35,3 +35,8 @@ prisma/*.db-journal
 # vercel
 .vercel
 .env*
+
+# agent tooling
+.claude
+.agents
+skills-lock.json
