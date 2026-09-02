@@ -73,7 +73,8 @@ export async function PUT(request, { params }) {
         }
 
         if (balance !== undefined && balance !== null) {
-            data.balance = parseFloat(balance) || 0;
+            // balance is an Int column — a float here fails the bind (Postgres 22P03)
+            data.balance = Math.round(Number(balance)) || 0;
         }
 
         if (password) {
