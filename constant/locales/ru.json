@@ -82,7 +82,10 @@
     "recentTasks": "Недавние задачи",
     "newestMembers": "Новые пользователи",
     "completed": "Завершено",
-    "open": "Открыто"
+    "open": "Открыто",
+    "noRecentUsers": "Новых пользователей нет.",
+    "unnamed": "Без имени",
+    "joined": "Регистрация: {date}"
   },
   "settings": {
     "changeSettings": "Изменить настройки",

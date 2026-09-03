@@ -2,12 +2,15 @@
 import React from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
+import { useTranslation } from "@/context/LanguageContext";
 
 const RecentUsers = ({ users = [] }) => {
+    const { t } = useTranslation();
+
     if (!users.length) {
         return (
             <div className="text-center py-4 text-slate-500">
-                No recent users found.
+                {t("dashboard.noRecentUsers")}
             </div>
         );
     }
@@ -30,13 +33,13 @@ const RecentUsers = ({ users = [] }) => {
                     </div>
                     <div className="flex-1">
                         <Link href={`/admin/users`} className="text-slate-800 dark:text-slate-300 font-medium hover:text-primary-500 text-sm block mb-1">
-                            {user.fullName || "Unnamed"}
+                            {user.fullName || t("dashboard.unnamed")}
                         </Link>
                         <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
                             {user.email}
                         </div>
                         <div className="text-xs text-slate-400 mt-1">
-                            Joined {new Date(user.createdAt).toLocaleDateString()}
+                            {t("dashboard.joined", { date: new Date(user.createdAt).toLocaleDateString() })}
                         </div>
                     </div>
                     <div className="flex-none text-right">

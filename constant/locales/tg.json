@@ -82,7 +82,10 @@
     "recentTasks": "Супоришҳои охирин",
     "newestMembers": "Корбарони нав",
     "completed": "Иҷрошуда",
-    "open": "Кушода"
+    "open": "Кушода",
+    "noRecentUsers": "Корбари нав нест.",
+    "unnamed": "Бе ном",
+    "joined": "Ба қайд гирифта шуд: {date}"
   },
   "settings": {
     "changeSettings": "Тағйири танзимот",

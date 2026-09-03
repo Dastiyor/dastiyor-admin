@@ -74,7 +74,9 @@ export async function GET() {
       }),
       prisma.user.findMany({
         take: 5,
+        where: { role: { not: "ADMIN" } },
         orderBy: { createdAt: "desc" },
+        select: { id: true, fullName: true, email: true, avatar: true, role: true, createdAt: true },
       }),
       prisma.payment.aggregate({
         where: { status: "COMPLETED" },
