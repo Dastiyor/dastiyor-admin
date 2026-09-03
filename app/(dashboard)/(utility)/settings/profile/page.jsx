@@ -70,7 +70,7 @@ const ProfileSettings = () => {
     }
   };
 
-  if (loading) return <div className="p-4 text-slate-500">Loading...</div>;
+  if (loading) return <div className="p-4 text-slate-500">{t("common.loading")}</div>;
 
   return (
     <div className="grid grid-cols-1 gap-5">
