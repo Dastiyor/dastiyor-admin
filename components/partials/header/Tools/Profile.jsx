@@ -41,13 +41,6 @@ const Profile = () => {
 
   const ProfileMenu = [
     {
-      label: t("common.profile"),
-      icon: "heroicons-outline:user",
-      action: () => {
-        router.push("/profile");
-      },
-    },
-    {
       label: t("common.settings"),
       icon: "heroicons-outline:cog",
       action: () => {

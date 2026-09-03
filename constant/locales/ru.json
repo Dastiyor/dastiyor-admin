@@ -34,8 +34,7 @@
     "marketplace": "Маркетплейс услуг —"
   },
   "common": {
-    "logout": "Выйти",
-    "profile": "Профиль",
+    "logout": "Выход",
     "settings": "Настройки",
     "admin": "Администратор",
     "calendar": "Календарь",
