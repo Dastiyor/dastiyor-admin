@@ -9,7 +9,7 @@ const Textarea = ({
   register,
   name,
   readonly,
-  dvalue,
+  value,
   error,
   icon,
   disabled,
@@ -62,6 +62,7 @@ const Textarea = ({
               error ? " has-error" : " "
             } form-control py-2 ${className}  `}
             placeholder={placeholder}
+            value={value}
             readOnly={readonly}
             disabled={disabled}
             id={id}

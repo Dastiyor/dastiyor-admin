@@ -75,7 +75,7 @@ const Textinput = ({
             placeholder={placeholder}
             readOnly={readonly}
             disabled={disabled}
-            defaultValue={defaultValue}
+            {...(value === undefined ? { defaultValue } : { value })}
             onChange={onChange}
             id={id}
           />
@@ -100,6 +100,7 @@ const Textinput = ({
           <Cleave
             placeholder={placeholder}
             options={options}
+            {...(value === undefined ? { defaultValue } : { value })}
             className={`${
               error ? " has-error" : " "
             } form-control py-2 ${className}  `}
