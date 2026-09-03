@@ -99,15 +99,8 @@
       "siteIdentity": "Идентификация сайта",
       "logo": "Логотип компании",
       "favicon": "Фавикон",
-      "footerText": "Текст футера",
-      "seo": "SEO Конфигурация",
-      "metaTitle": "Мета заголовок",
-      "metaDescription": "Мета описание",
-      "metaKeywords": "Мета ключевые слова",
-      "socialMedia": "Ссылки на соцсети",
       "facebook": "Facebook URL",
       "twitter": "Twitter URL",
-      "instagram": "Instagram URL",
       "linkedin": "LinkedIn URL"
     },
     "payment": {

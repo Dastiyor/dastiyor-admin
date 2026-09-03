@@ -14,14 +14,6 @@ const defaultCompany = {
   phone: "",
   supportEmail: "",
   address: "",
-  footerText: "",
-  metaTitle: "",
-  metaDescription: "",
-  metaKeywords: "",
-  facebook: "",
-  twitter: "",
-  instagram: "",
-  linkedin: "",
 };
 
 const CompanySettings = () => {
@@ -95,26 +87,6 @@ const CompanySettings = () => {
             <input type="file" className="form-control py-2" />
             <span className="text-xs text-slate-500 block mt-1">Recommended size: 32x32px</span>
           </div>
-          <div className="lg:col-span-2">
-            <Textinput label={t("settings.company.footerText")} type="text" placeholder="e.g. © 2024 Dastiyor. All rights reserved." value={data.footerText} onChange={(e) => setData({ ...data, footerText: e.target.value })} />
-          </div>
-        </div>
-      </Card>
-
-      <Card title={t("settings.company.seo")}>
-        <div className="space-y-4">
-          <Textinput label={t("settings.company.metaTitle")} type="text" placeholder={t("settings.company.metaTitle")} value={data.metaTitle} onChange={(e) => setData({ ...data, metaTitle: e.target.value })} />
-          <Textarea label={t("settings.company.metaDescription")} placeholder={t("settings.company.metaDescription")} value={data.metaDescription} onChange={(e) => setData({ ...data, metaDescription: e.target.value })} />
-          <Textinput label={t("settings.company.metaKeywords")} type="text" placeholder={t("settings.company.metaKeywords")} value={data.metaKeywords} onChange={(e) => setData({ ...data, metaKeywords: e.target.value })} />
-        </div>
-      </Card>
-
-      <Card title={t("settings.company.socialMedia")}>
-        <div className="grid lg:grid-cols-2 grid-cols-1 gap-5">
-          <Textinput label={t("settings.company.facebook")} type="url" placeholder="https://facebook.com/..." value={data.facebook} onChange={(e) => setData({ ...data, facebook: e.target.value })} />
-          <Textinput label={t("settings.company.twitter")} type="url" placeholder="https://twitter.com/..." value={data.twitter} onChange={(e) => setData({ ...data, twitter: e.target.value })} />
-          <Textinput label={t("settings.company.instagram")} type="url" placeholder="https://instagram.com/..." value={data.instagram} onChange={(e) => setData({ ...data, instagram: e.target.value })} />
-          <Textinput label={t("settings.company.linkedin")} type="url" placeholder="https://linkedin.com/..." value={data.linkedin} onChange={(e) => setData({ ...data, linkedin: e.target.value })} />
         </div>
       </Card>
 

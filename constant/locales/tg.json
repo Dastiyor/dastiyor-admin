@@ -99,15 +99,8 @@
       "siteIdentity": "Ҳувияти сомона",
       "logo": "Логотипи ширкат",
       "favicon": "Фавикон",
-      "footerText": "Матни поёни саҳифа",
-      "seo": "Конфигуратсияи SEO",
-      "metaTitle": "Мета сарлавҳа",
-      "metaDescription": "Мета тавсиф",
-      "metaKeywords": "Калидвожаҳои мета",
-      "socialMedia": "Пайвандҳо ба шабакаҳои иҷтимоӣ",
       "facebook": "Facebook URL",
       "twitter": "Twitter URL",
-      "instagram": "Instagram URL",
       "linkedin": "LinkedIn URL"
     },
     "payment": {
