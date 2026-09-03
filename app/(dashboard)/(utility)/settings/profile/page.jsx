@@ -18,7 +18,6 @@ const defaultProfile = {
   city: "",
   state: "",
   zip: "",
-  country: "",
 };
 
 const ProfileSettings = () => {
@@ -106,7 +105,6 @@ const ProfileSettings = () => {
           <Textinput label={t("settings.profile.city")} type="text" placeholder="New York" value={data.city} onChange={(e) => setData({ ...data, city: e.target.value })} />
           <Textinput label={t("settings.profile.state")} type="text" placeholder="NY" value={data.state} onChange={(e) => setData({ ...data, state: e.target.value })} />
           <Textinput label={t("settings.profile.zip")} type="text" placeholder="10001" value={data.zip} onChange={(e) => setData({ ...data, zip: e.target.value })} />
-          <Textinput label={t("settings.profile.country")} type="text" placeholder="USA" value={data.country} onChange={(e) => setData({ ...data, country: e.target.value })} />
         </div>
       </Card>
 
