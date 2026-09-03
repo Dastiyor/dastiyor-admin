@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { deleteUserCascade } from "@/lib/cascade";
 import { NextResponse } from "next/server";
 
 export async function GET(request, { params }) {
@@ -114,7 +115,7 @@ export async function DELETE(request, { params }) {
                 );
             }
         }
-        await prisma.user.delete({ where: { id: params.id } });
+        await prisma.$transaction((tx) => deleteUserCascade(tx, params.id), { timeout: 20000 });
         prisma.actionLog.create({
             data: { action: "admin_delete_user", entity: "User", entityId: params.id },
         }).catch(() => {});

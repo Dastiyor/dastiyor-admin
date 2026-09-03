@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { deleteTasksCascade } from "@/lib/cascade";
 import { NextResponse } from "next/server";
 
 export async function GET(request, { params }) {
@@ -65,7 +66,13 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
     try {
-        await prisma.task.delete({ where: { id: params.id } });
+        const deleted = await prisma.$transaction(
+            (tx) => deleteTasksCascade(tx, { id: params.id }),
+            { timeout: 20000 }
+        );
+        if (!deleted) {
+            return NextResponse.json({ error: "Task not found" }, { status: 404 });
+        }
         prisma.actionLog.create({
             data: { action: "admin_delete_task", entity: "Task", entityId: params.id },
         }).catch(() => {});
