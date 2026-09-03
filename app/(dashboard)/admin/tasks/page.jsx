@@ -11,6 +11,7 @@ import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
 import GlobalFilter from "@/components/partials/table/GlobalFilter";
+import RowSelectCheckbox from "@/components/partials/table/RowSelectCheckbox";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import { exportCsv } from "@/lib/exportCsv";
@@ -22,26 +23,6 @@ import {
   useGlobalFilter,
   usePagination,
 } from "react-table";
-
-const IndeterminateCheckbox = React.forwardRef(
-  ({ indeterminate, ...rest }, ref) => {
-    const defaultRef = React.useRef();
-    const resolvedRef = ref || defaultRef;
-
-    React.useEffect(() => {
-      resolvedRef.current.indeterminate = indeterminate;
-    }, [resolvedRef, indeterminate]);
-
-    return (
-      <input
-        type="checkbox"
-        ref={resolvedRef}
-        {...rest}
-        className="table-checkbox"
-      />
-    );
-  }
-);
 
 export default function AdminTasks() {
   const [tasks, setTasks] = useState([]);
@@ -296,12 +277,12 @@ export default function AdminTasks() {
           id: "selection",
           Header: ({ getToggleAllRowsSelectedProps }) => (
             <div>
-              <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} />
+              <RowSelectCheckbox {...getToggleAllRowsSelectedProps()} />
             </div>
           ),
           Cell: ({ row }) => (
             <div>
-              <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />
+              <RowSelectCheckbox {...row.getToggleRowSelectedProps()} />
             </div>
           ),
         },

@@ -9,12 +9,15 @@ import Textinput from "@/components/ui/Textinput";
 import Textarea from "@/components/ui/Textarea";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import GlobalFilter from "@/components/partials/table/GlobalFilter";
+import RowSelectCheckbox from "@/components/partials/table/RowSelectCheckbox";
 import Tooltip from "@/components/ui/Tooltip";
+import { bulkDelete } from "@/lib/bulkDelete";
 import {
   useTable,
   useSortBy,
   useGlobalFilter,
   usePagination,
+  useRowSelect,
 } from "react-table";
 
 function parseSubcategories(val) {
@@ -201,7 +204,26 @@ export default function AdminCategories() {
     },
     useGlobalFilter,
     useSortBy,
-    usePagination
+    usePagination,
+    useRowSelect,
+    (hooks) => {
+      hooks.visibleColumns.push((columns) => [
+        {
+          id: "selection",
+          Header: ({ getToggleAllRowsSelectedProps }) => (
+            <div>
+              <RowSelectCheckbox {...getToggleAllRowsSelectedProps()} />
+            </div>
+          ),
+          Cell: ({ row }) => (
+            <div>
+              <RowSelectCheckbox {...row.getToggleRowSelectedProps()} />
+            </div>
+          ),
+        },
+        ...columns,
+      ]);
+    }
   );
 
   const {
@@ -220,16 +242,39 @@ export default function AdminCategories() {
     setPageSize,
     setGlobalFilter,
     prepareRow,
+    selectedFlatRows,
+    toggleAllRowsSelected,
   } = tableInstance;
 
   const { globalFilter, pageIndex, pageSize } = state;
+
+  const handleBulkDelete = async () => {
+    const ids = selectedFlatRows.map((r) => r.original.id);
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} categories? This cannot be undone.`)) return;
+    const failed = await bulkDelete("/api/categories", ids);
+    if (failed.length) {
+      alert(`${failed.length} of ${ids.length} not deleted:\n${failed.join("\n")}`);
+    }
+    toggleAllRowsSelected(false);
+    fetchCategories();
+  };
 
   return (
     <div>
       <HomeBredCurbs title="Categories" />
       <Card title="Service categories" noborder>
         <div className="md:flex justify-between items-center mb-6">
-          <Button text="Add category" className="btn-success btn-sm" onClick={handleCreate} />
+          <div className="flex items-center gap-2">
+            <Button text="Add category" className="btn-success btn-sm" onClick={handleCreate} />
+            {selectedFlatRows.length > 0 && (
+              <Button
+                text={`Delete ${selectedFlatRows.length}`}
+                className="btn-danger btn-sm"
+                onClick={handleBulkDelete}
+              />
+            )}
+          </div>
           <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
         </div>
         {error && (
