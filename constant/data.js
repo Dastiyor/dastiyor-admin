@@ -8,9 +8,7 @@ export const menuItems = [
   { title: "Reviews & complaints", translationKey: "menu.reviews", icon: "heroicons-outline:star", link: "admin/reviews" },
   { title: "Notifications", translationKey: "menu.notifications", icon: "heroicons-outline:bell-alert", link: "admin/notifications" },
   { title: "Conversations", translationKey: "menu.conversations", icon: "heroicons-outline:chat-bubble-left-ellipsis", link: "admin/conversations" },
-  { title: "Push Subscriptions", translationKey: "menu.pushSubscriptions", icon: "heroicons-outline:bell", link: "admin/push-subscriptions" },
   { title: "Audit Log", translationKey: "menu.audit", icon: "heroicons-outline:clipboard-document-check", link: "admin/audit" },
-  { title: "Calendar", translationKey: "menu.calendar", icon: "heroicons-outline:calendar", link: "admin/calendar" },
   {
     title: "Settings",
     translationKey: "menu.settings",
