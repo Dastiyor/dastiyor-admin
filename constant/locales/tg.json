@@ -98,10 +98,7 @@
       "address": "Суроғаи ширкат",
       "siteIdentity": "Ҳувияти сомона",
       "logo": "Логотипи ширкат",
-      "favicon": "Фавикон",
-      "facebook": "Facebook URL",
-      "twitter": "Twitter URL",
-      "linkedin": "LinkedIn URL"
+      "favicon": "Фавикон"
     },
     "payment": {
       "title": "Танзимоти пардохт",
@@ -143,7 +140,6 @@
       "fullName": "Ному насаб",
       "email": "Email",
       "phone": "Рақами телефон",
-      "jobTitle": "Вазифа",
       "bio": "Дар бораи худ",
       "address": "Суроға",
       "addressLine1": "Суроға (сатри 1)",
@@ -152,12 +148,6 @@
       "state": "Вилоят / Штат",
       "zip": "Индекси почта",
       "country": "Кишвар",
-      "social": "Пайвандҳо ба профилҳо дар шабакаҳои иҷтимоӣ",
-      "website": "Вебсайт",
-      "security": "Тағйири парол",
-      "currentPassword": "Пароли ҷорӣ",
-      "newPassword": "Пароли нав",
-      "confirmPassword": "Пароли навро тасдиқ кунед",
       "updateProfile": "Навсозии профил"
     }
   },

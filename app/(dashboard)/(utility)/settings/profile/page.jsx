@@ -12,7 +12,6 @@ const defaultProfile = {
   fullName: "",
   email: "",
   phone: "",
-  jobTitle: "",
   bio: "",
   addressLine1: "",
   addressLine2: "",
@@ -20,10 +19,6 @@ const defaultProfile = {
   state: "",
   zip: "",
   country: "",
-  facebook: "",
-  twitter: "",
-  linkedin: "",
-  website: "",
 };
 
 const ProfileSettings = () => {
@@ -98,7 +93,6 @@ const ProfileSettings = () => {
               <Textinput label={t("settings.profile.fullName")} type="text" placeholder="John Doe" value={data.fullName} onChange={(e) => setData({ ...data, fullName: e.target.value })} />
               <Textinput label={t("settings.profile.email")} type="email" placeholder="john.doe@example.com" value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} />
               <Textinput label={t("settings.profile.phone")} type="text" placeholder="+1 234 567 890" value={data.phone} onChange={(e) => setData({ ...data, phone: e.target.value })} />
-              <Textinput label={t("settings.profile.jobTitle")} type="text" placeholder="Software Engineer" value={data.jobTitle} onChange={(e) => setData({ ...data, jobTitle: e.target.value })} />
             </div>
             <Textarea label={t("settings.profile.bio")} placeholder={t("settings.profile.bio")} value={data.bio} onChange={(e) => setData({ ...data, bio: e.target.value })} />
           </div>
@@ -114,19 +108,6 @@ const ProfileSettings = () => {
           <Textinput label={t("settings.profile.zip")} type="text" placeholder="10001" value={data.zip} onChange={(e) => setData({ ...data, zip: e.target.value })} />
           <Textinput label={t("settings.profile.country")} type="text" placeholder="USA" value={data.country} onChange={(e) => setData({ ...data, country: e.target.value })} />
         </div>
-      </Card>
-
-      <Card title={t("settings.profile.social")}>
-        <div className="grid lg:grid-cols-2 grid-cols-1 gap-5">
-          <Textinput label={t("settings.company.facebook")} type="url" placeholder="https://facebook.com/..." value={data.facebook} onChange={(e) => setData({ ...data, facebook: e.target.value })} />
-          <Textinput label={t("settings.company.twitter")} type="url" placeholder="https://twitter.com/..." value={data.twitter} onChange={(e) => setData({ ...data, twitter: e.target.value })} />
-          <Textinput label={t("settings.company.linkedin")} type="url" placeholder="https://linkedin.com/..." value={data.linkedin} onChange={(e) => setData({ ...data, linkedin: e.target.value })} />
-          <Textinput label={t("settings.profile.website")} type="url" placeholder="https://example.com" value={data.website} onChange={(e) => setData({ ...data, website: e.target.value })} />
-        </div>
-      </Card>
-
-      <Card title={t("settings.profile.security")}>
-        <p className="text-slate-500 text-sm">Change password from header profile or login page.</p>
       </Card>
 
       <div className="text-right">

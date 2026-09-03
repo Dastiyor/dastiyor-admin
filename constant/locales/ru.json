@@ -98,10 +98,7 @@
       "address": "Адрес компании",
       "siteIdentity": "Идентификация сайта",
       "logo": "Логотип компании",
-      "favicon": "Фавикон",
-      "facebook": "Facebook URL",
-      "twitter": "Twitter URL",
-      "linkedin": "LinkedIn URL"
+      "favicon": "Фавикон"
     },
     "payment": {
       "title": "Настройки платежей",
@@ -143,7 +140,6 @@
       "fullName": "Полное имя",
       "email": "Email",
       "phone": "Номер телефона",
-      "jobTitle": "Должность",
       "bio": "О себе",
       "address": "Адрес",
       "addressLine1": "Адрес (строка 1)",
@@ -152,12 +148,6 @@
       "state": "Область / Штат",
       "zip": "Почтовый индекс",
       "country": "Страна",
-      "social": "Ссылки на профили в соцсетях",
-      "website": "Веб-сайт",
-      "security": "Смена пароля",
-      "currentPassword": "Текущий пароль",
-      "newPassword": "Новый пароль",
-      "confirmPassword": "Подтвердите новый пароль",
       "updateProfile": "Обновить профиль"
     }
   },
