@@ -25,8 +25,6 @@
     "subscriptions": "Подписки и платежи",
     "reviews": "Отзывы и жалобы",
     "notifications": "Уведомления",
-    "moderation": "Инструменты модерации",
-    "providers": "Исполнители",
     "conversations": "Переписки",
     "pushSubscriptions": "Push-подписки",
     "audit": "Журнал действий",
@@ -55,7 +53,6 @@
   "activity": {
     "userJoined": "Новый пользователь",
     "taskCreated": "Новое задание",
-    "reportOpened": "Новая жалоба",
     "reviewPosted": "Новый отзыв"
   },
   "dashboard": {

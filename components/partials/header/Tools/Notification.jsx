@@ -16,7 +16,6 @@ const SEEN_KEY = "admin_activity_seen_at";
 const EVENT_STYLE = {
   USER_JOINED: { icon: "heroicons-outline:user-plus", key: "activity.userJoined" },
   TASK_CREATED: { icon: "heroicons-outline:clipboard-document-list", key: "activity.taskCreated" },
-  REPORT_OPENED: { icon: "heroicons-outline:shield-exclamation", key: "activity.reportOpened" },
   REVIEW_POSTED: { icon: "heroicons-outline:star", key: "activity.reviewPosted" },
 };
 

@@ -15,7 +15,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "8", 10)));
 
-    const [users, tasks, reports, reviews] = await Promise.all([
+    const [users, tasks, reviews] = await Promise.all([
       prisma.user.findMany({
         take: limit,
         where: { role: { not: "ADMIN" } },
@@ -26,12 +26,6 @@ export async function GET(request) {
         take: limit,
         orderBy: { createdAt: "desc" },
         select: { id: true, title: true, city: true, createdAt: true },
-      }),
-      prisma.report.findMany({
-        take: limit,
-        where: { status: "OPEN" },
-        orderBy: { createdAt: "desc" },
-        select: { id: true, reason: true, createdAt: true },
       }),
       prisma.review.findMany({
         take: limit,
@@ -61,14 +55,6 @@ export async function GET(request) {
         meta: t.city,
         createdAt: t.createdAt,
         link: "/admin/tasks",
-      })),
-      ...reports.map((r) => ({
-        id: `report-${r.id}`,
-        type: "REPORT_OPENED",
-        name: r.reason,
-        meta: null,
-        createdAt: r.createdAt,
-        link: "/admin/moderation",
       })),
       ...reviews.map((r) => ({
         id: `review-${r.id}`,
