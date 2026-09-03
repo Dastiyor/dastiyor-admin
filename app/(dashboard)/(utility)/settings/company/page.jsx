@@ -59,7 +59,7 @@ const CompanySettings = () => {
     }
   };
 
-  if (loading) return <div className="p-4 text-slate-500">Loading...</div>;
+  if (loading) return <div className="p-4 text-slate-500">{t("common.loading")}</div>;
 
   return (
     <div className="grid grid-cols-1 gap-5">
@@ -71,21 +71,6 @@ const CompanySettings = () => {
           <Textinput label={t("settings.company.supportEmail")} type="email" placeholder="e.g. support@dastiyor.com" value={data.supportEmail} onChange={(e) => setData({ ...data, supportEmail: e.target.value })} />
           <div className="lg:col-span-2">
             <Textarea label={t("settings.company.address")} placeholder={t("settings.company.address")} value={data.address} onChange={(e) => setData({ ...data, address: e.target.value })} />
-          </div>
-        </div>
-      </Card>
-
-      <Card title={t("settings.company.siteIdentity")}>
-        <div className="grid lg:grid-cols-2 grid-cols-1 gap-5">
-          <div>
-            <label className="block capitalize form-label mb-2">{t("settings.company.logo")}</label>
-            <input type="file" className="form-control py-2" />
-            <span className="text-xs text-slate-500 block mt-1">Recommended size: 150x50px</span>
-          </div>
-          <div>
-            <label className="block capitalize form-label mb-2">{t("settings.company.favicon")}</label>
-            <input type="file" className="form-control py-2" />
-            <span className="text-xs text-slate-500 block mt-1">Recommended size: 32x32px</span>
           </div>
         </div>
       </Card>

@@ -97,10 +97,7 @@
       "email": "Email-и ширкат",
       "phone": "Телефони ширкат",
       "supportEmail": "Email-и дастгирӣ",
-      "address": "Суроғаи ширкат",
-      "siteIdentity": "Ҳувияти сомона",
-      "logo": "Логотипи ширкат",
-      "favicon": "Фавикон"
+      "address": "Суроғаи ширкат"
     },
     "payment": {
       "title": "Танзимоти пардохт",
