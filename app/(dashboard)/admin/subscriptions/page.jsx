@@ -17,8 +17,10 @@ import {
   usePagination,
 } from "react-table";
 import { toast } from "react-toastify";
+import { useTranslation } from "@/context/LanguageContext";
 
 export default function AdminSubscriptions() {
+  const { t, locale } = useTranslation();
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -78,7 +80,7 @@ export default function AdminSubscriptions() {
   }, [paymentStatus, paymentDateFrom, paymentDateTo]);
 
   const handleRefund = async (paymentId) => {
-    if (!confirm("Mark this payment as refunded? This will update the status to CANCELLED.")) return;
+    if (!confirm(t("subscriptions.confirmRefund"))) return;
     setRefundBusy(paymentId);
     try {
       const res = await fetch(`/api/payments/${paymentId}`, {
@@ -89,7 +91,7 @@ export default function AdminSubscriptions() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || res.statusText);
-      toast.success("Payment refunded");
+      toast.success(t("subscriptions.paymentRefunded"));
       fetchPayments();
     } catch (e) {
       toast.error(e.message);
@@ -116,7 +118,7 @@ export default function AdminSubscriptions() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || res.statusText);
-      toast.success(data.message || "Subscription extended");
+      toast.success(data.message || t("subscriptions.extended"));
       setExtendModal(false);
       setSelectedSub(null);
       fetchSubscriptions();
@@ -128,7 +130,7 @@ export default function AdminSubscriptions() {
   };
 
   const handleCancel = async (sub) => {
-    if (!confirm(`Cancel subscription for ${sub.user?.fullName}?`)) return;
+    if (!confirm(t("subscriptions.confirmCancel", { name: sub.user?.fullName }))) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/subscriptions/${sub.id}`, {
@@ -139,7 +141,7 @@ export default function AdminSubscriptions() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || res.statusText);
-      toast.success("Subscription cancelled");
+      toast.success(t("subscriptions.cancelled"));
       fetchSubscriptions();
     } catch (e) {
       toast.error(e.message);
@@ -150,7 +152,7 @@ export default function AdminSubscriptions() {
 
   const COLUMNS = [
     {
-      Header: "User",
+      Header: t("common.user"),
       accessor: "user",
       Cell: (row) => (
         <div className="flex flex-col">
@@ -162,7 +164,7 @@ export default function AdminSubscriptions() {
       ),
     },
     {
-      Header: "Plan",
+      Header: t("subscriptions.plan"),
       accessor: "plan",
       Cell: (row) => (
         <span className="badge bg-primary-500/10 text-primary-500 capitalize">
@@ -171,7 +173,7 @@ export default function AdminSubscriptions() {
       ),
     },
     {
-      Header: "Start",
+      Header: t("subscriptions.start"),
       accessor: "startDate",
       Cell: (row) => (
         <span className="text-sm text-slate-600 dark:text-slate-300">
@@ -182,7 +184,7 @@ export default function AdminSubscriptions() {
       ),
     },
     {
-      Header: "End",
+      Header: t("subscriptions.end"),
       accessor: "endDate",
       Cell: (row) => (
         <span className="text-sm text-slate-600 dark:text-slate-300">
@@ -193,17 +195,17 @@ export default function AdminSubscriptions() {
       ),
     },
     {
-      Header: "Status",
+      Header: t("common.status"),
       accessor: "isActive",
       Cell: (row) =>
         row?.cell?.value ? (
-          <span className="text-success-500 text-sm">Active</span>
+          <span className="text-success-500 text-sm">{t("subscriptions.active")}</span>
         ) : (
-          <span className="text-slate-500 text-sm">Inactive</span>
+          <span className="text-slate-500 text-sm">{t("subscriptions.inactive")}</span>
         ),
     },
     {
-      Header: "Actions",
+      Header: t("common.actions"),
       accessor: "id",
       Cell: (row) => {
         const sub = row?.row?.original;
@@ -211,7 +213,7 @@ export default function AdminSubscriptions() {
           <div className="flex space-x-2 rtl:space-x-reverse">
             {sub?.isActive && (
               <>
-                <Tooltip content="Extend" placement="top">
+                <Tooltip content={t("subscriptions.extend")} placement="top">
                   <button
                     type="button"
                     className="action-btn"
@@ -221,7 +223,7 @@ export default function AdminSubscriptions() {
                     <Icon icon="heroicons-outline:calendar-days" />
                   </button>
                 </Tooltip>
-                <Tooltip content="Cancel" placement="top" theme="danger">
+                <Tooltip content={t("common.cancel")} placement="top" theme="danger">
                   <button
                     type="button"
                     className="action-btn text-danger-500"
@@ -239,7 +241,7 @@ export default function AdminSubscriptions() {
     },
   ];
 
-  const columns = useMemo(() => COLUMNS, []);
+  const columns = useMemo(() => COLUMNS, [locale]);
   const data = useMemo(() => subscriptions, [subscriptions]);
 
   const tableInstance = useTable(
@@ -275,10 +277,10 @@ export default function AdminSubscriptions() {
 
   return (
     <div>
-      <HomeBredCurbs title="Subscriptions & payments" />
-      <Card title="Subscriptions" noborder>
+      <HomeBredCurbs title={t("subscriptions.title")} />
+      <Card title={t("subscriptions.cardTitle")} noborder>
         <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
-          Manage Basic, Standard, Premium plans. Extend or cancel active subscriptions.
+          {t("subscriptions.description")}
         </p>
         <div className="md:flex justify-between items-center mb-6 gap-4 flex-wrap">
           <div className="flex items-center gap-3">
@@ -287,9 +289,9 @@ export default function AdminSubscriptions() {
               value={filterActive}
               onChange={(e) => setFilterActive(e.target.value)}
             >
-              <option value="">All</option>
-              <option value="true">Active only</option>
-              <option value="false">Inactive only</option>
+              <option value="">{t("common.all")}</option>
+              <option value="true">{t("subscriptions.activeOnly")}</option>
+              <option value="false">{t("subscriptions.inactiveOnly")}</option>
             </select>
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
@@ -301,7 +303,7 @@ export default function AdminSubscriptions() {
           </p>
         )}
         {loading ? (
-          <div className="p-5 text-center text-slate-500">Loading...</div>
+          <div className="p-5 text-center text-slate-500">{t("common.loading")}</div>
         ) : (
           <>
             <div className="overflow-x-auto -mx-6">
@@ -346,7 +348,7 @@ export default function AdminSubscriptions() {
                           colSpan={COLUMNS.length}
                           className="table-td text-center text-slate-500 py-8"
                         >
-                          No subscriptions found.
+                          {t("subscriptions.empty")}
                         </td>
                       </tr>
                     ) : (
@@ -381,12 +383,12 @@ export default function AdminSubscriptions() {
                   >
                     {[10, 25, 50].map((n) => (
                       <option key={n} value={n}>
-                        Show {n}
+                        {t("common.show", { n })}
                       </option>
                     ))}
                   </select>
                   <span className="text-sm text-slate-600 dark:text-slate-300">
-                    Page {pageIndex + 1} of {pageOptions.length || 1}
+                    {t("common.pageOf", { page: pageIndex + 1, total: pageOptions.length || 1 })}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2 mt-4 md:mt-0">
@@ -402,14 +404,14 @@ export default function AdminSubscriptions() {
                     onClick={() => previousPage()}
                     disabled={!canPreviousPage}
                   >
-                    Prev
+                    {t("common.prev")}
                   </button>
                   <button
                     className="btn btn-sm btn-outline-dark"
                     onClick={() => nextPage()}
                     disabled={!canNextPage}
                   >
-                    Next
+                    {t("common.next")}
                   </button>
                   <button
                     className="btn btn-sm btn-outline-dark"
@@ -425,10 +427,10 @@ export default function AdminSubscriptions() {
         )}
       </Card>
 
-      <Card title="Payments" className="mt-5">
+      <Card title={t("subscriptions.paymentsTitle")} className="mt-5">
         <p className="text-slate-500 dark:text-slate-400 text-sm mb-4 flex items-center gap-2">
           <Icon icon="heroicons-outline:information-circle" className="text-lg" />
-          Payment history (SmartPay). Amounts in TJS (Tajik Somoni).
+          {t("subscriptions.paymentsNote")}
         </p>
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <select
@@ -436,18 +438,18 @@ export default function AdminSubscriptions() {
             value={paymentStatus}
             onChange={(e) => setPaymentStatus(e.target.value)}
           >
-            <option value="">All statuses</option>
-            <option value="PENDING">PENDING</option>
-            <option value="COMPLETED">COMPLETED</option>
-            <option value="FAILED">FAILED</option>
-            <option value="CANCELLED">CANCELLED</option>
+            <option value="">{t("subscriptions.allStatuses")}</option>
+            <option value="PENDING">{t("subscriptions.paymentStatus.pending")}</option>
+            <option value="COMPLETED">{t("subscriptions.paymentStatus.completed")}</option>
+            <option value="FAILED">{t("subscriptions.paymentStatus.failed")}</option>
+            <option value="CANCELLED">{t("subscriptions.paymentStatus.cancelled")}</option>
           </select>
-          <input type="date" className="form-control py-2" value={paymentDateFrom} onChange={(e) => setPaymentDateFrom(e.target.value)} title="From" />
+          <input type="date" className="form-control py-2" value={paymentDateFrom} onChange={(e) => setPaymentDateFrom(e.target.value)} title={t("subscriptions.from")} />
           <span className="text-slate-400 text-sm">–</span>
-          <input type="date" className="form-control py-2" value={paymentDateTo} onChange={(e) => setPaymentDateTo(e.target.value)} title="To" />
+          <input type="date" className="form-control py-2" value={paymentDateTo} onChange={(e) => setPaymentDateTo(e.target.value)} title={t("subscriptions.to")} />
           {(paymentDateFrom || paymentDateTo || paymentStatus) && (
             <button className="btn btn-sm btn-outline-dark" onClick={() => { setPaymentStatus(""); setPaymentDateFrom(""); setPaymentDateTo(""); }}>
-              Clear
+              {t("subscriptions.clear")}
             </button>
           )}
           <button
@@ -458,25 +460,25 @@ export default function AdminSubscriptions() {
               status: p.status, createdAt: p.createdAt,
             })))}
           >
-            Export CSV
+            {t("common.exportCsv")}
           </button>
         </div>
         {paymentsLoading ? (
-          <div className="p-4 text-center text-slate-500">Loading payments...</div>
+          <div className="p-4 text-center text-slate-500">{t("common.loading")}</div>
         ) : payments.length === 0 ? (
-          <p className="text-slate-500 text-sm py-4">No payments yet.</p>
+          <p className="text-slate-500 text-sm py-4">{t("subscriptions.noPayments")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
               <thead className="bg-slate-200 dark:bg-slate-700">
                 <tr>
-                  <th className="table-th text-left">User</th>
-                  <th className="table-th text-left">Amount</th>
-                  <th className="table-th text-left">Type / Plan</th>
-                  <th className="table-th text-left">Method</th>
-                  <th className="table-th text-left">Status</th>
-                  <th className="table-th text-left">Date</th>
-                  <th className="table-th text-left">Actions</th>
+                  <th className="table-th text-left">{t("common.user")}</th>
+                  <th className="table-th text-left">{t("subscriptions.amount")}</th>
+                  <th className="table-th text-left">{t("subscriptions.typePlan")}</th>
+                  <th className="table-th text-left">{t("subscriptions.method")}</th>
+                  <th className="table-th text-left">{t("common.status")}</th>
+                  <th className="table-th text-left">{t("common.date")}</th>
+                  <th className="table-th text-left">{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">
@@ -504,14 +506,16 @@ export default function AdminSubscriptions() {
                         p.status === "FAILED" ? "text-danger-500" :
                         p.status === "CANCELLED" ? "text-warning-500" :
                         "text-slate-500"
-                      }`}>{p.status}</span>
+                      }`}>
+                        {p.status ? t(`subscriptions.paymentStatus.${p.status.toLowerCase()}`) : "—"}
+                      </span>
                     </td>
                     <td className="table-td text-sm text-slate-500">
                       {p.createdAt ? new Date(p.createdAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }) : "—"}
                     </td>
                     <td className="table-td">
                       {p.status === "COMPLETED" && (
-                        <Tooltip content="Refund" placement="top" theme="danger">
+                        <Tooltip content={t("subscriptions.refund")} placement="top" theme="danger">
                           <button
                             type="button"
                             className="action-btn text-danger-500"
@@ -534,12 +538,12 @@ export default function AdminSubscriptions() {
       <Modal
         activeModal={extendModal}
         onClose={() => !busy && setExtendModal(false)}
-        title="Extend subscription"
+        title={t("subscriptions.extendTitle")}
         footerContent={
           <>
-            <Button text="Cancel" className="btn-outline-dark" onClick={() => setExtendModal(false)} />
+            <Button text={t("common.cancel")} className="btn-outline-dark" onClick={() => setExtendModal(false)} />
             <Button
-              text="Extend"
+              text={t("subscriptions.extend")}
               className="btn-dark"
               onClick={submitExtend}
               disabled={busy}
@@ -550,11 +554,13 @@ export default function AdminSubscriptions() {
         {selectedSub && (
           <div className="space-y-4">
             <p className="text-sm text-slate-600 dark:text-slate-300">
-              Extend subscription for <strong>{selectedSub.user?.fullName}</strong> (plan:{" "}
-              {selectedSub.plan}) by:
+              {t("subscriptions.extendPrompt", {
+                name: selectedSub.user?.fullName,
+                plan: selectedSub.plan,
+              })}
             </p>
             <Textinput
-              label="Days"
+              label={t("subscriptions.days")}
               type="number"
               min={1}
               value={extendDays}

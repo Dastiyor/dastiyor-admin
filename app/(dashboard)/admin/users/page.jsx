@@ -15,6 +15,7 @@ import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import { exportCsv } from "@/lib/exportCsv";
 import { bulkDelete } from "@/lib/bulkDelete";
+import { useTranslation } from "@/context/LanguageContext";
 import {
   useTable,
   useRowSelect,
@@ -23,7 +24,14 @@ import {
   usePagination,
 } from "react-table";
 
+const ROLE_KEYS = {
+  CUSTOMER: "users.roleCustomer",
+  PROVIDER: "users.roleProvider",
+  ADMIN: "users.roleAdmin",
+};
+
 export default function AdminUsers() {
+  const { t, locale } = useTranslation();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -88,7 +96,7 @@ export default function AdminUsers() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
+    if (!confirm(t("users.confirmDelete"))) return;
     try {
       const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error(await res.text());
@@ -139,7 +147,7 @@ export default function AdminUsers() {
 
   const COLUMNS = [
     {
-      Header: "User",
+      Header: t("common.user"),
       accessor: "fullName",
       Cell: (row) => (
         <div>
@@ -158,14 +166,16 @@ export default function AdminUsers() {
       ),
     },
     {
-      Header: "Role",
+      Header: t("users.role"),
       accessor: "role",
       Cell: (row) => (
-        <span className="badge bg-primary-500/10 text-primary-500">{row?.cell?.value}</span>
+        <span className="badge bg-primary-500/10 text-primary-500">
+          {ROLE_KEYS[row?.cell?.value] ? t(ROLE_KEYS[row.cell.value]) : row?.cell?.value}
+        </span>
       ),
     },
     {
-      Header: "Status",
+      Header: t("common.status"),
       accessor: "isVerified",
       Cell: (row) => {
         const user = row?.row?.original;
@@ -173,15 +183,15 @@ export default function AdminUsers() {
         return (
           <div className="flex flex-col gap-1">
             {row?.cell?.value ? (
-              <span className="text-success-500 text-xs">Verified</span>
+              <span className="text-success-500 text-xs">{t("users.verified")}</span>
             ) : (
-              <span className="text-slate-400 text-xs">Unverified</span>
+              <span className="text-slate-400 text-xs">{t("users.unverified")}</span>
             )}
             {user?.googleId && <span className="text-xs text-info-500">Google</span>}
             {user?.appleId && <span className="text-xs text-slate-500">Apple</span>}
             {isLocked && (
               <span className="text-danger-500 text-xs font-medium">
-                Locked ({user.loginAttempts} attempts)
+                {t("users.lockedAttempts", { count: user.loginAttempts })}
               </span>
             )}
           </div>
@@ -189,17 +199,20 @@ export default function AdminUsers() {
       },
     },
     {
-      Header: "Tasks / Responses",
+      Header: t("users.tasksResponses"),
       accessor: "id",
       Cell: (row) => (
         <span className="text-sm text-slate-600 dark:text-slate-300">
-          {row?.row?.original?._count?.tasks ?? 0} tasks / {row?.row?.original?._count?.responses ?? 0} responses
+          {t("users.tasksResponsesCount", {
+            tasks: row?.row?.original?._count?.tasks ?? 0,
+            responses: row?.row?.original?._count?.responses ?? 0,
+          })}
         </span>
       ),
       disableSortBy: true,
     },
     {
-      Header: "Balance (TJS)",
+      Header: t("users.balanceTjs"),
       accessor: "balance",
       Cell: (row) => (
         <span className={`text-sm font-medium ${(row?.cell?.value || 0) > 0 ? "text-success-500" : "text-slate-500"}`}>
@@ -208,33 +221,33 @@ export default function AdminUsers() {
       ),
     },
     {
-      Header: "Action",
+      Header: t("common.actions"),
       accessor: "action",
       Cell: (row) => {
         const user = row?.row?.original;
         const isLocked = user?.lockedUntil && new Date(user.lockedUntil) > new Date();
         return (
           <div className="flex space-x-3 rtl:space-x-reverse">
-            <Tooltip content="Edit" placement="top" arrow animation="shift-away">
+            <Tooltip content={t("common.edit")} placement="top" arrow animation="shift-away">
               <button className="action-btn" type="button" onClick={() => handleEdit(user)}>
                 <Icon icon="heroicons:pencil-square" />
               </button>
             </Tooltip>
             {user?.verificationDocuments && (
-              <Tooltip content="Verification Docs" placement="top" arrow animation="shift-away">
+              <Tooltip content={t("users.verificationDocs")} placement="top" arrow animation="shift-away">
                 <button className="action-btn text-info-500" type="button" onClick={() => setDocsModal(user)}>
                   <Icon icon="heroicons:document-check" />
                 </button>
               </Tooltip>
             )}
             {isLocked && (
-              <Tooltip content="Unlock" placement="top" arrow animation="shift-away">
+              <Tooltip content={t("users.unlock")} placement="top" arrow animation="shift-away">
                 <button className="action-btn text-warning-500" type="button" onClick={() => handleUnlock(user.id)}>
                   <Icon icon="heroicons:lock-open" />
                 </button>
               </Tooltip>
             )}
-            <Tooltip content="Delete" placement="top" arrow animation="shift-away" theme="danger">
+            <Tooltip content={t("common.delete")} placement="top" arrow animation="shift-away" theme="danger">
               <button className="action-btn" type="button" onClick={() => handleDelete(user.id)}>
                 <Icon icon="heroicons:trash" />
               </button>
@@ -245,7 +258,7 @@ export default function AdminUsers() {
     },
   ];
 
-  const columns = useMemo(() => COLUMNS, []);
+  const columns = useMemo(() => COLUMNS, [locale]);
   const data = useMemo(() => users, [users]);
 
   const tableInstance = useTable(
@@ -303,10 +316,10 @@ export default function AdminUsers() {
   const handleBulkDelete = async () => {
     const ids = selectedFlatRows.map((r) => r.original.id);
     if (!ids.length) return;
-    if (!confirm(`Delete ${ids.length} users? This cannot be undone.`)) return;
+    if (!confirm(t("users.confirmBulkDelete", { count: ids.length }))) return;
     const failed = await bulkDelete("/api/users", ids);
     if (failed.length) {
-      alert(`${failed.length} of ${ids.length} not deleted:\n${failed.join("\n")}`);
+      alert(`${t("users.bulkDeleteFailed", { failed: failed.length, total: ids.length })}\n${failed.join("\n")}`);
     }
     toggleAllRowsSelected(false);
     fetchUsers();
@@ -314,14 +327,14 @@ export default function AdminUsers() {
 
   return (
     <div>
-      <HomeBredCurbs title="Users management" />
+      <HomeBredCurbs title={t("users.title")} />
       <Card noborder>
         <div className="md:flex justify-between items-center mb-6 gap-4 flex-wrap">
           <div className="flex items-center gap-2">
-            <Button text="Add User" className="btn-success btn-sm" onClick={handleCreate} />
+            <Button text={t("users.addUser")} className="btn-success btn-sm" onClick={handleCreate} />
             {selectedFlatRows.length > 0 && (
               <Button
-                text={`Delete ${selectedFlatRows.length}`}
+                text={t("common.deleteSelected", { count: selectedFlatRows.length })}
                 className="btn-danger btn-sm"
                 onClick={handleBulkDelete}
               />
@@ -334,14 +347,14 @@ export default function AdminUsers() {
                 createdAt: u.createdAt,
               })))}
             >
-              Export CSV
+              {t("common.exportCsv")}
             </button>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <input
               type="text"
               className="form-control py-2"
-              placeholder="Search name / email / phone..."
+              placeholder={t("users.searchPlaceholder")}
               value={userSearch}
               onChange={(e) => setUserSearch(e.target.value)}
             />
@@ -350,18 +363,18 @@ export default function AdminUsers() {
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
             >
-              <option value="">All roles</option>
-              <option value="CUSTOMER">Customer</option>
-              <option value="PROVIDER">Provider</option>
+              <option value="">{t("users.allRoles")}</option>
+              <option value="CUSTOMER">{t("users.roleCustomer")}</option>
+              <option value="PROVIDER">{t("users.roleProvider")}</option>
             </select>
             <select
               className="form-control py-2 w-max"
               value={verifiedFilter}
               onChange={(e) => setVerifiedFilter(e.target.value)}
             >
-              <option value="">All verification</option>
-              <option value="true">Verified</option>
-              <option value="false">Unverified</option>
+              <option value="">{t("users.allVerification")}</option>
+              <option value="true">{t("users.verified")}</option>
+              <option value="false">{t("users.unverified")}</option>
             </select>
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
@@ -369,7 +382,7 @@ export default function AdminUsers() {
         {error && (
           <p className="text-danger text-sm mb-4 flex items-center gap-2">
             <Icon icon="heroicons-outline:exclamation-circle" className="text-lg" />
-            {error} — ensure .env has DATABASE_URL and run: npm run db:push
+            {error} — {t("users.dbHint")}
           </p>
         )}
         {loading ? (
@@ -450,15 +463,12 @@ export default function AdminUsers() {
                 >
                   {[10, 25, 50, 100].map((pageSize) => (
                     <option key={pageSize} value={pageSize}>
-                      Show {pageSize}
+                      {t("common.show", { n: pageSize })}
                     </option>
                   ))}
                 </select>
                 <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                  Page{" "}
-                  <span>
-                    {pageIndex + 1} of {pageOptions.length}
-                  </span>
+                  {t("common.pageOf", { page: pageIndex + 1, total: pageOptions.length })}
                 </span>
               </div>
               <ul className="flex items-center  space-x-3  rtl:space-x-reverse flex-wrap">
@@ -479,7 +489,7 @@ export default function AdminUsers() {
                     onClick={() => previousPage()}
                     disabled={!canPreviousPage}
                   >
-                    Prev
+                    {t("common.prev")}
                   </button>
                 </li>
                 {pageOptions.map((page, pageIdx) => (
@@ -504,7 +514,7 @@ export default function AdminUsers() {
                     onClick={() => nextPage()}
                     disabled={!canNextPage}
                   >
-                    Next
+                    {t("common.next")}
                   </button>
                 </li>
                 <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
@@ -527,10 +537,10 @@ export default function AdminUsers() {
       <Modal
         activeModal={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={currentUser ? "Edit User" : "Add User"}
+        title={currentUser ? t("users.editUser") : t("users.addUser")}
         footerContent={
           <Button
-            text={currentUser ? "Update" : "Create"}
+            text={currentUser ? t("common.update") : t("common.create")}
             className="btn-dark"
             onClick={handleSubmit}
           />
@@ -538,47 +548,49 @@ export default function AdminUsers() {
       >
         <div className="space-y-4">
           <Textinput
-            label="Full Name"
+            label={t("users.fullName")}
             value={formData.fullName}
             onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-            placeholder="John Doe"
+            placeholder={t("users.fullNamePlaceholder")}
           />
           <Textinput
-            label="Email"
+            label={t("users.email")}
             type="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             placeholder="user@example.com"
           />
           <Textinput
-            label={currentUser ? "Password (leave blank to keep current)" : "Password"}
+            label={currentUser ? t("users.passwordKeepBlank") : t("users.password")}
             type="password"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             placeholder="******"
           />
           <Textinput
-            label="Phone"
+            label={t("users.phone")}
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             placeholder="+1234567890"
           />
           <Select
-            label="Role"
+            label={t("users.role")}
             // ADMIN is offered only for an account that already has it, so editing
             // the existing admin does not silently blank the select.
-            options={formData.role === "ADMIN" ? ["CUSTOMER", "PROVIDER", "ADMIN"] : ["CUSTOMER", "PROVIDER"]}
+            options={(formData.role === "ADMIN" ? ["CUSTOMER", "PROVIDER", "ADMIN"] : ["CUSTOMER", "PROVIDER"]).map(
+              (r) => ({ value: r, label: t(ROLE_KEYS[r]) })
+            )}
             value={formData.role}
             onChange={(e) => setFormData({ ...formData, role: e.target.value })}
           />
           <Checkbox
-            label="Verified User"
+            label={t("users.verifiedUser")}
             value={formData.isVerified}
             onChange={(e) => setFormData({ ...formData, isVerified: e.target.checked })}
           />
           {currentUser && (
             <Textinput
-              label="Balance (TJS)"
+              label={t("users.balanceTjs")}
               type="number"
               value={formData.balance}
               onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
@@ -591,14 +603,14 @@ export default function AdminUsers() {
       <Modal
         activeModal={!!docsModal}
         onClose={() => setDocsModal(null)}
-        title={`Verification Docs — ${docsModal?.fullName ?? ""}`}
+        title={`${t("users.verificationDocs")} — ${docsModal?.fullName ?? ""}`}
         className="max-w-2xl"
       >
         {docsModal && (() => {
           let docs = [];
           try { docs = JSON.parse(docsModal.verificationDocuments) || []; } catch { docs = []; }
           return docs.length === 0 ? (
-            <p className="text-slate-500 text-sm">No documents uploaded.</p>
+            <p className="text-slate-500 text-sm">{t("users.noDocuments")}</p>
           ) : (
             <div className="space-y-3">
               {docs.map((url, i) => (
@@ -616,7 +628,7 @@ export default function AdminUsers() {
               ))}
               <div className="flex gap-2 mt-4">
                 <Button
-                  text="Approve Provider"
+                  text={t("users.approveProvider")}
                   className="btn-success btn-sm"
                   onClick={async () => {
                     const res = await fetch(`/api/users/${docsModal.id}`, {
@@ -628,7 +640,7 @@ export default function AdminUsers() {
                   }}
                 />
                 <Button
-                  text="Reject (unverify)"
+                  text={t("users.rejectUnverify")}
                   className="btn-danger btn-sm"
                   onClick={async () => {
                     const res = await fetch(`/api/users/${docsModal.id}`, {

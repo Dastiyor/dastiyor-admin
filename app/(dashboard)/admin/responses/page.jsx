@@ -11,8 +11,10 @@ import {
   useGlobalFilter,
   usePagination,
 } from "react-table";
+import { useTranslation } from "@/context/LanguageContext";
 
 export default function AdminResponses() {
+  const { t, locale } = useTranslation();
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,19 +42,23 @@ export default function AdminResponses() {
 
   const COLUMNS = [
     {
-      Header: "Task",
+      Header: t("responses.task"),
       accessor: "task",
       Cell: (row) => (
         <div className="flex flex-col max-w-[200px]">
           <span className="text-sm font-medium text-slate-900 dark:text-white line-clamp-2">
             {row?.cell?.value?.title ?? "—"}
           </span>
-          <span className="text-xs text-slate-500">{row?.cell?.value?.status}</span>
+          <span className="text-xs text-slate-500">
+            {row?.cell?.value?.status
+              ? t(`responses.taskStatus.${row.cell.value.status.toLowerCase()}`)
+              : ""}
+          </span>
         </div>
       ),
     },
     {
-      Header: "Provider",
+      Header: t("responses.provider"),
       accessor: "user",
       Cell: (row) => (
         <div className="flex flex-col">
@@ -64,7 +70,7 @@ export default function AdminResponses() {
       ),
     },
     {
-      Header: "Price (TJS)",
+      Header: t("responses.price"),
       accessor: "priceNum",
       Cell: (row) => {
         const num = row?.cell?.value;
@@ -77,7 +83,7 @@ export default function AdminResponses() {
       },
     },
     {
-      Header: "Message",
+      Header: t("responses.message"),
       accessor: "message",
       Cell: (row) => (
         <span className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 max-w-[220px]">
@@ -86,14 +92,14 @@ export default function AdminResponses() {
       ),
     },
     {
-      Header: "Est. time",
+      Header: t("responses.estimatedTime"),
       accessor: "estimatedTime",
       Cell: (row) => (
         <span className="text-sm text-slate-500">{row?.cell?.value || "—"}</span>
       ),
     },
     {
-      Header: "Status",
+      Header: t("common.status"),
       accessor: "status",
       Cell: (row) => {
         const s = row?.cell?.value;
@@ -103,11 +109,15 @@ export default function AdminResponses() {
             : s === "REJECTED"
               ? "bg-danger-500/10 text-danger-500"
               : "bg-primary-500/10 text-primary-500";
-        return <span className={`badge ${cls}`}>{s ?? "—"}</span>;
+        return (
+          <span className={`badge ${cls}`}>
+            {s ? t(`responses.status.${s.toLowerCase()}`) : "—"}
+          </span>
+        );
       },
     },
     {
-      Header: "Date",
+      Header: t("common.date"),
       accessor: "createdAt",
       Cell: (row) => (
         <span className="text-sm text-slate-500">
@@ -122,7 +132,7 @@ export default function AdminResponses() {
     },
   ];
 
-  const columns = useMemo(() => COLUMNS, []);
+  const columns = useMemo(() => COLUMNS, [locale]);
   const data = useMemo(() => responses, [responses]);
 
   const tableInstance = useTable(
@@ -158,10 +168,10 @@ export default function AdminResponses() {
 
   return (
     <div>
-      <HomeBredCurbs title="Responses" />
-      <Card title="Task responses" noborder>
+      <HomeBredCurbs title={t("responses.title")} />
+      <Card title={t("responses.cardTitle")} noborder>
         <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
-          All provider responses to tasks. View-only; accept/reject is done by customers on the marketplace.
+          {t("responses.description")}
         </p>
         <div className="md:flex justify-between items-center mb-6 gap-4 flex-wrap">
           <div className="flex items-center gap-3">
@@ -170,10 +180,10 @@ export default function AdminResponses() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="">All statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="ACCEPTED">Accepted</option>
-              <option value="REJECTED">Rejected</option>
+              <option value="">{t("responses.allStatuses")}</option>
+              <option value="PENDING">{t("responses.status.pending")}</option>
+              <option value="ACCEPTED">{t("responses.status.accepted")}</option>
+              <option value="REJECTED">{t("responses.status.rejected")}</option>
             </select>
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
@@ -185,7 +195,7 @@ export default function AdminResponses() {
           </p>
         )}
         {loading ? (
-          <div className="p-5 text-center text-slate-500">Loading...</div>
+          <div className="p-5 text-center text-slate-500">{t("common.loading")}</div>
         ) : (
           <>
             <div className="overflow-x-auto -mx-6">
@@ -230,7 +240,7 @@ export default function AdminResponses() {
                           colSpan={COLUMNS.length}
                           className="table-td text-center text-slate-500 py-8"
                         >
-                          No responses found.
+                          {t("responses.empty")}
                         </td>
                       </tr>
                     ) : (
@@ -265,12 +275,12 @@ export default function AdminResponses() {
                   >
                     {[10, 25, 50].map((n) => (
                       <option key={n} value={n}>
-                        Show {n}
+                        {t("common.show", { n })}
                       </option>
                     ))}
                   </select>
                   <span className="text-sm text-slate-600 dark:text-slate-300">
-                    Page {pageIndex + 1} of {pageOptions.length || 1}
+                    {t("common.pageOf", { page: pageIndex + 1, total: pageOptions.length || 1 })}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2 mt-4 md:mt-0">
@@ -286,14 +296,14 @@ export default function AdminResponses() {
                     onClick={() => previousPage()}
                     disabled={!canPreviousPage}
                   >
-                    Prev
+                    {t("common.prev")}
                   </button>
                   <button
                     className="btn btn-sm btn-outline-dark"
                     onClick={() => nextPage()}
                     disabled={!canNextPage}
                   >
-                    Next
+                    {t("common.next")}
                   </button>
                   <button
                     className="btn btn-sm btn-outline-dark"

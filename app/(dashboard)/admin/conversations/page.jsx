@@ -5,6 +5,7 @@ import Card from "@/components/ui/Card";
 import Icon from "@/components/ui/Icon";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import GlobalFilter from "@/components/partials/table/GlobalFilter";
+import { useTranslation } from "@/context/LanguageContext";
 import {
   useTable,
   useSortBy,
@@ -13,6 +14,7 @@ import {
 } from "react-table";
 
 export default function AdminConversations() {
+  const { t, locale } = useTranslation();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -41,7 +43,7 @@ export default function AdminConversations() {
 
   const COLUMNS = [
     {
-      Header: "From",
+      Header: t("conversations.colFrom"),
       accessor: "sender",
       Cell: (row) => {
         const u = row?.cell?.value;
@@ -49,13 +51,13 @@ export default function AdminConversations() {
           <div className="flex flex-col">
             <span className="text-sm font-medium text-slate-900 dark:text-white">{u?.fullName ?? "—"}</span>
             <span className="text-xs text-slate-500">{u?.email}</span>
-            <span className="text-xs text-slate-400 capitalize">{u?.role?.toLowerCase()}</span>
+            <span className="text-xs text-slate-400 capitalize">{u?.role && t(`conversations.role.${u.role.toLowerCase()}`)}</span>
           </div>
         );
       },
     },
     {
-      Header: "To",
+      Header: t("conversations.colTo"),
       accessor: "receiver",
       Cell: (row) => {
         const u = row?.cell?.value;
@@ -63,27 +65,27 @@ export default function AdminConversations() {
           <div className="flex flex-col">
             <span className="text-sm font-medium text-slate-900 dark:text-white">{u?.fullName ?? "—"}</span>
             <span className="text-xs text-slate-500">{u?.email}</span>
-            <span className="text-xs text-slate-400 capitalize">{u?.role?.toLowerCase()}</span>
+            <span className="text-xs text-slate-400 capitalize">{u?.role && t(`conversations.role.${u.role.toLowerCase()}`)}</span>
           </div>
         );
       },
     },
     {
-      Header: "Task",
+      Header: t("conversations.colTask"),
       accessor: "task",
       Cell: (row) => {
-        const t = row?.cell?.value;
-        if (!t) return <span className="text-xs text-slate-400">—</span>;
+        const task = row?.cell?.value;
+        if (!task) return <span className="text-xs text-slate-400">—</span>;
         return (
           <div className="flex flex-col max-w-[180px]">
-            <span className="text-sm text-slate-700 dark:text-slate-300 line-clamp-1">{t.title}</span>
-            <span className="text-xs text-slate-400">{t.status}</span>
+            <span className="text-sm text-slate-700 dark:text-slate-300 line-clamp-1">{task.title}</span>
+            <span className="text-xs text-slate-400">{task.status && t(`conversations.taskStatus.${task.status.toLowerCase()}`)}</span>
           </div>
         );
       },
     },
     {
-      Header: "Message",
+      Header: t("conversations.colMessage"),
       accessor: "content",
       Cell: (row) => (
         <span className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 max-w-[260px]">
@@ -92,17 +94,17 @@ export default function AdminConversations() {
       ),
     },
     {
-      Header: "Read",
+      Header: t("conversations.colRead"),
       accessor: "isRead",
       Cell: (row) =>
         row?.cell?.value ? (
-          <span className="text-success-500 text-xs">Read</span>
+          <span className="text-success-500 text-xs">{t("conversations.read")}</span>
         ) : (
-          <span className="text-warning-500 text-xs font-medium">Unread</span>
+          <span className="text-warning-500 text-xs font-medium">{t("conversations.unread")}</span>
         ),
     },
     {
-      Header: "Time",
+      Header: t("conversations.colTime"),
       accessor: "createdAt",
       Cell: (row) => (
         <span className="text-xs text-slate-500 whitespace-nowrap">
@@ -114,7 +116,7 @@ export default function AdminConversations() {
     },
   ];
 
-  const columns = useMemo(() => COLUMNS, []);
+  const columns = useMemo(() => COLUMNS, [locale]);
   const data = useMemo(() => messages, [messages]);
 
   const tableInstance = useTable(
@@ -146,10 +148,10 @@ export default function AdminConversations() {
 
   return (
     <div>
-      <HomeBredCurbs title="Conversations" />
+      <HomeBredCurbs title={t("conversations.title")} />
       <Card noborder>
         <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
-          All messages between users. Read-only moderation view.
+          {t("conversations.subtitle")}
         </p>
         <div className="md:flex justify-between items-center mb-6 gap-4 flex-wrap">
           <div className="flex items-center gap-3 flex-wrap">
@@ -157,7 +159,7 @@ export default function AdminConversations() {
               <input
                 type="text"
                 className="form-control py-2"
-                placeholder="Filter by user ID..."
+                placeholder={t("conversations.filterPlaceholder")}
                 value={userIdInput}
                 onChange={(e) => setUserIdInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && setUserIdFilter(userIdInput.trim())}
@@ -166,20 +168,20 @@ export default function AdminConversations() {
                 className="btn btn-sm btn-dark"
                 onClick={() => setUserIdFilter(userIdInput.trim())}
               >
-                Filter
+                {t("conversations.filter")}
               </button>
               {userIdFilter && (
                 <button
                   className="btn btn-sm btn-outline-dark"
                   onClick={() => { setUserIdFilter(""); setUserIdInput(""); }}
                 >
-                  Clear
+                  {t("conversations.clear")}
                 </button>
               )}
             </div>
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
-          <span className="text-xs text-slate-400">{messages.length} messages loaded</span>
+          <span className="text-xs text-slate-400">{t("conversations.messagesLoaded", { count: messages.length })}</span>
         </div>
 
         {error && (
@@ -190,7 +192,7 @@ export default function AdminConversations() {
         )}
 
         {loading ? (
-          <div className="p-5 text-center text-slate-500">Loading...</div>
+          <div className="p-5 text-center text-slate-500">{t("common.loading")}</div>
         ) : (
           <>
             <div className="overflow-x-auto -mx-6">
@@ -224,7 +226,7 @@ export default function AdminConversations() {
                     {page.length === 0 ? (
                       <tr>
                         <td colSpan={COLUMNS.length} className="table-td text-center text-slate-500 py-8">
-                          No messages found.
+                          {t("conversations.noMessages")}
                         </td>
                       </tr>
                     ) : (
@@ -252,18 +254,18 @@ export default function AdminConversations() {
                   value={pageSize}
                   onChange={(e) => setPageSize(Number(e.target.value))}
                 >
-                  {[25, 50, 100].map((n) => <option key={n} value={n}>Show {n}</option>)}
+                  {[25, 50, 100].map((n) => <option key={n} value={n}>{t("common.show", { n })}</option>)}
                 </select>
                 <span className="text-sm text-slate-600 dark:text-slate-300">
-                  Page {pageIndex + 1} of {pageOptions.length || 1}
+                  {t("common.pageOf", { page: pageIndex + 1, total: pageOptions.length || 1 })}
                 </span>
               </div>
               <div className="flex items-center space-x-2 mt-4 md:mt-0">
                 <button className="btn btn-sm btn-outline-dark" onClick={() => gotoPage(0)} disabled={!canPreviousPage}>
                   <Icon icon="heroicons:chevron-double-left-solid" />
                 </button>
-                <button className="btn btn-sm btn-outline-dark" onClick={() => previousPage()} disabled={!canPreviousPage}>Prev</button>
-                <button className="btn btn-sm btn-outline-dark" onClick={() => nextPage()} disabled={!canNextPage}>Next</button>
+                <button className="btn btn-sm btn-outline-dark" onClick={() => previousPage()} disabled={!canPreviousPage}>{t("common.prev")}</button>
+                <button className="btn btn-sm btn-outline-dark" onClick={() => nextPage()} disabled={!canNextPage}>{t("common.next")}</button>
                 <button className="btn btn-sm btn-outline-dark" onClick={() => gotoPage(pageCount - 1)} disabled={!canNextPage}>
                   <Icon icon="heroicons:chevron-double-right-solid" />
                 </button>

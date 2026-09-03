@@ -16,6 +16,7 @@ import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import { exportCsv } from "@/lib/exportCsv";
 import { bulkDelete } from "@/lib/bulkDelete";
+import { useTranslation } from "@/context/LanguageContext";
 import {
   useTable,
   useRowSelect,
@@ -25,6 +26,7 @@ import {
 } from "react-table";
 
 export default function AdminTasks() {
+  const { t, locale } = useTranslation();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -141,7 +143,7 @@ export default function AdminTasks() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this task?")) return;
+    if (!confirm(t("tasks.confirmDelete"))) return;
     try {
       const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error(await res.text());
@@ -176,7 +178,7 @@ export default function AdminTasks() {
 
   const COLUMNS = [
     {
-      Header: "Task",
+      Header: t("tasks.colTask"),
       accessor: "title",
       Cell: (row) => (
         <div className="flex flex-col">
@@ -186,18 +188,18 @@ export default function AdminTasks() {
       ),
     },
     {
-      Header: "Category",
+      Header: t("tasks.colCategory"),
       accessor: "category",
       Cell: (row) => <span className="text-sm text-slate-600 dark:text-slate-300">{row?.cell?.value}</span>,
     },
     {
-      Header: "Budget",
+      Header: t("tasks.colBudget"),
       accessor: "budgetAmountNum",
       Cell: (row) => {
         const num = row?.cell?.value;
         const str = row?.row?.original?.budgetAmount;
         const type = row?.row?.original?.budgetType;
-        if (type === "negotiable") return <span className="text-xs text-slate-400">Negotiable</span>;
+        if (type === "negotiable") return <span className="text-xs text-slate-400">{t("tasks.budgetType.negotiable")}</span>;
         return (
           <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
             {num != null ? `${num.toLocaleString()} TJS` : str ?? "—"}
@@ -206,18 +208,18 @@ export default function AdminTasks() {
       },
     },
     {
-      Header: "Urgency",
+      Header: t("tasks.colUrgency"),
       accessor: "urgency",
       Cell: (row) => {
         const u = row?.cell?.value || "normal";
         const cls = u === "urgent" ? "bg-danger-500/10 text-danger-500" :
           u === "low" ? "bg-slate-500/10 text-slate-500" :
             "bg-info-500/10 text-info-500";
-        return <span className={`badge ${cls} capitalize`}>{u}</span>;
+        return <span className={`badge ${cls} capitalize`}>{t(`tasks.urgency.${u}`)}</span>;
       },
     },
     {
-      Header: "Status",
+      Header: t("common.status"),
       accessor: "status",
       Cell: (row) => {
         const status = row?.cell?.value;
@@ -225,30 +227,30 @@ export default function AdminTasks() {
           status === "IN_PROGRESS" ? "bg-warning-500/10 text-warning-500" :
             status === "CANCELLED" ? "bg-danger-500/10 text-danger-500" :
               "bg-primary-500/10 text-primary-500";
-        return <span className={`badge ${badgeClass}`}>{status}</span>;
+        return <span className={`badge ${badgeClass}`}>{status && t(`tasks.status.${status.toLowerCase()}`)}</span>;
       },
     },
     {
-      Header: "Author",
+      Header: t("tasks.colAuthor"),
       accessor: "user.fullName",
       Cell: (row) => (
         <div className="flex flex-col">
-          <span className="text-sm text-slate-600 dark:text-slate-300">{row?.cell?.value || "Unknown"}</span>
+          <span className="text-sm text-slate-600 dark:text-slate-300">{row?.cell?.value || t("tasks.unknownAuthor")}</span>
           <span className="text-xs text-slate-500">{row?.row?.original?.user?.email}</span>
         </div>
       ),
     },
     {
-      Header: "Action",
+      Header: t("common.actions"),
       accessor: "action",
       Cell: (row) => (
         <div className="flex space-x-3 rtl:space-x-reverse">
-          <Tooltip content="Edit" placement="top" arrow animation="shift-away">
+          <Tooltip content={t("common.edit")} placement="top" arrow animation="shift-away">
             <button className="action-btn" type="button" onClick={() => handleEdit(row.row.original)}>
               <Icon icon="heroicons:pencil-square" />
             </button>
           </Tooltip>
-          <Tooltip content="Delete" placement="top" arrow animation="shift-away" theme="danger">
+          <Tooltip content={t("common.delete")} placement="top" arrow animation="shift-away" theme="danger">
             <button className="action-btn" type="button" onClick={() => handleDelete(row.row.original.id)}>
               <Icon icon="heroicons:trash" />
             </button>
@@ -258,7 +260,7 @@ export default function AdminTasks() {
     },
   ];
 
-  const columns = useMemo(() => COLUMNS, []);
+  const columns = useMemo(() => COLUMNS, [locale]);
   const data = useMemo(() => tasks, [tasks]);
 
   const tableInstance = useTable(
@@ -316,10 +318,10 @@ export default function AdminTasks() {
   const handleBulkDelete = async () => {
     const ids = selectedFlatRows.map((r) => r.original.id);
     if (!ids.length) return;
-    if (!confirm(`Delete ${ids.length} tasks? This cannot be undone.`)) return;
+    if (!confirm(t("tasks.confirmBulkDelete", { count: ids.length }))) return;
     const failed = await bulkDelete("/api/tasks", ids);
     if (failed.length) {
-      alert(`${failed.length} of ${ids.length} not deleted:\n${failed.join("\n")}`);
+      alert(`${t("tasks.bulkDeleteFailed", { failed: failed.length, total: ids.length })}\n${failed.join("\n")}`);
     }
     toggleAllRowsSelected(false);
     fetchTasks();
@@ -327,14 +329,14 @@ export default function AdminTasks() {
 
   return (
     <div>
-      <HomeBredCurbs title="Tasks management" />
+      <HomeBredCurbs title={t("tasks.title")} />
       <Card noborder>
         <div className="md:flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
-            <Button text="Add Task" className="btn-success btn-sm" onClick={handleCreate} />
+            <Button text={t("tasks.addTask")} className="btn-success btn-sm" onClick={handleCreate} />
             {selectedFlatRows.length > 0 && (
               <Button
-                text={`Delete ${selectedFlatRows.length}`}
+                text={t("common.deleteSelected", { count: selectedFlatRows.length })}
                 className="btn-danger btn-sm"
                 onClick={handleBulkDelete}
               />
@@ -347,7 +349,7 @@ export default function AdminTasks() {
                 city: t.city, createdAt: t.createdAt, user: t.user?.email || "",
               })))}
             >
-              Export CSV
+              {t("common.exportCsv")}
             </button>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
@@ -355,51 +357,51 @@ export default function AdminTasks() {
               <input
                 type="text"
                 className="form-control py-2"
-                placeholder="Search title / description..."
+                placeholder={t("tasks.searchPlaceholder")}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && setSearchQ(searchInput.trim())}
               />
-              <button className="btn btn-sm btn-dark" onClick={() => setSearchQ(searchInput.trim())}>Search</button>
-              {searchQ && <button className="btn btn-sm btn-outline-dark" onClick={() => { setSearchQ(""); setSearchInput(""); }}>Clear</button>}
+              <button className="btn btn-sm btn-dark" onClick={() => setSearchQ(searchInput.trim())}>{t("common.search")}</button>
+              {searchQ && <button className="btn btn-sm btn-outline-dark" onClick={() => { setSearchQ(""); setSearchInput(""); }}>{t("tasks.clear")}</button>}
             </div>
             <select
               className="form-control py-2 w-max"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="">All statuses</option>
-              <option value="OPEN">OPEN</option>
-              <option value="IN_PROGRESS">IN_PROGRESS</option>
-              <option value="COMPLETED">COMPLETED</option>
-              <option value="CANCELLED">CANCELLED</option>
+              <option value="">{t("tasks.allStatuses")}</option>
+              <option value="OPEN">{t("tasks.status.open")}</option>
+              <option value="IN_PROGRESS">{t("tasks.status.in_progress")}</option>
+              <option value="COMPLETED">{t("tasks.status.completed")}</option>
+              <option value="CANCELLED">{t("tasks.status.cancelled")}</option>
             </select>
             <select
               className="form-control py-2 w-max"
               value={urgencyFilter}
               onChange={(e) => setUrgencyFilter(e.target.value)}
             >
-              <option value="">All urgency</option>
-              <option value="low">Low</option>
-              <option value="normal">Normal</option>
-              <option value="urgent">Urgent</option>
+              <option value="">{t("tasks.allUrgency")}</option>
+              <option value="low">{t("tasks.urgency.low")}</option>
+              <option value="normal">{t("tasks.urgency.normal")}</option>
+              <option value="urgent">{t("tasks.urgency.urgent")}</option>
             </select>
             <select
               className="form-control py-2 w-max"
               value={sortFilter}
               onChange={(e) => setSortFilter(e.target.value)}
             >
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-              <option value="budget-high">Budget: high → low</option>
-              <option value="budget-low">Budget: low → high</option>
+              <option value="newest">{t("tasks.sortNewest")}</option>
+              <option value="oldest">{t("tasks.sortOldest")}</option>
+              <option value="budget-high">{t("tasks.sortBudgetHigh")}</option>
+              <option value="budget-low">{t("tasks.sortBudgetLow")}</option>
             </select>
             <div className="flex items-center gap-2">
-              <input type="date" className="form-control py-2" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} title="From date" />
+              <input type="date" className="form-control py-2" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} title={t("tasks.fromDate")} />
               <span className="text-slate-400 text-sm">–</span>
-              <input type="date" className="form-control py-2" value={dateTo} onChange={(e) => setDateTo(e.target.value)} title="To date" />
+              <input type="date" className="form-control py-2" value={dateTo} onChange={(e) => setDateTo(e.target.value)} title={t("tasks.toDate")} />
               {(dateFrom || dateTo) && (
-                <button className="btn btn-sm btn-outline-dark" onClick={() => { setDateFrom(""); setDateTo(""); }}>Clear</button>
+                <button className="btn btn-sm btn-outline-dark" onClick={() => { setDateFrom(""); setDateTo(""); }}>{t("tasks.clear")}</button>
               )}
             </div>
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
@@ -483,15 +485,12 @@ export default function AdminTasks() {
                 >
                   {[10, 25, 50, 100].map((pageSize) => (
                     <option key={pageSize} value={pageSize}>
-                      Show {pageSize}
+                      {t("common.show", { n: pageSize })}
                     </option>
                   ))}
                 </select>
                 <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                  Page{" "}
-                  <span>
-                    {pageIndex + 1} of {pageOptions.length}
-                  </span>
+                  {t("common.pageOf", { page: pageIndex + 1, total: pageOptions.length })}
                 </span>
               </div>
               <ul className="flex items-center  space-x-3  rtl:space-x-reverse flex-wrap">
@@ -512,7 +511,7 @@ export default function AdminTasks() {
                     onClick={() => previousPage()}
                     disabled={!canPreviousPage}
                   >
-                    Prev
+                    {t("common.prev")}
                   </button>
                 </li>
                 {pageOptions.map((page, pageIdx) => (
@@ -537,7 +536,7 @@ export default function AdminTasks() {
                     onClick={() => nextPage()}
                     disabled={!canNextPage}
                   >
-                    Next
+                    {t("common.next")}
                   </button>
                 </li>
                 <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
@@ -559,10 +558,10 @@ export default function AdminTasks() {
       <Modal
         activeModal={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={currentTask ? "Edit Task" : "Add Task"}
+        title={currentTask ? t("tasks.editTask") : t("tasks.addTask")}
         footerContent={
           <Button
-            text={currentTask ? "Update" : "Create"}
+            text={currentTask ? t("common.update") : t("common.create")}
             className="btn-dark"
             onClick={handleSubmit}
           />
@@ -570,26 +569,26 @@ export default function AdminTasks() {
       >
         <div className="space-y-4">
           <Textinput
-            label="Title"
+            label={t("tasks.fieldTitle")}
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            placeholder="Task Title"
+            placeholder={t("tasks.titlePlaceholder")}
           />
           <Textarea
-            label="Description"
+            label={t("tasks.fieldDescription")}
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="Detailed description..."
+            placeholder={t("tasks.descriptionPlaceholder")}
           />
           <Textinput
-            label="Category"
+            label={t("tasks.fieldCategory")}
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value, subcategory: "" })}
-            placeholder="Type or pick from list"
+            placeholder={t("tasks.categoryPlaceholder")}
           />
           {categories?.length > 0 && (
             <Select
-              label="Category (pick)"
+              label={t("tasks.categoryPick")}
               options={categories.map((c) => c.name)}
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value, subcategory: "" })}
@@ -603,7 +602,7 @@ export default function AdminTasks() {
             if (!Array.isArray(subs) || subs.length === 0) return null;
             return (
               <Select
-                label="Subcategory"
+                label={t("tasks.fieldSubcategory")}
                 options={subs}
                 value={formData.subcategory}
                 onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
@@ -611,43 +610,55 @@ export default function AdminTasks() {
             );
           })()}
           <Textinput
-            label="City"
+            label={t("tasks.fieldCity")}
             value={formData.city}
             onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-            placeholder="City"
+            placeholder={t("tasks.fieldCity")}
           />
           <Textinput
-            label="Budget Amount"
+            label={t("tasks.fieldBudgetAmount")}
             value={formData.budgetAmount}
             onChange={(e) => setFormData({ ...formData, budgetAmount: e.target.value })}
-            placeholder="e.g. 200"
+            placeholder={t("tasks.budgetAmountPlaceholder")}
           />
           <Select
-            label="Status"
-            options={["OPEN", "IN_PROGRESS", "COMPLETED", "CANCELLED"]}
+            label={t("common.status")}
+            options={[
+              { value: "OPEN", label: t("tasks.status.open") },
+              { value: "IN_PROGRESS", label: t("tasks.status.in_progress") },
+              { value: "COMPLETED", label: t("tasks.status.completed") },
+              { value: "CANCELLED", label: t("tasks.status.cancelled") },
+            ]}
             value={formData.status}
             onChange={(e) => setFormData({ ...formData, status: e.target.value })}
           />
           <Select
-            label="Urgency"
-            options={["low", "normal", "urgent"]}
+            label={t("tasks.fieldUrgency")}
+            options={[
+              { value: "low", label: t("tasks.urgency.low") },
+              { value: "normal", label: t("tasks.urgency.normal") },
+              { value: "urgent", label: t("tasks.urgency.urgent") },
+            ]}
             value={formData.urgency}
             onChange={(e) => setFormData({ ...formData, urgency: e.target.value })}
           />
           <Select
-            label="Budget Type"
-            options={["fixed", "negotiable"]}
+            label={t("tasks.fieldBudgetType")}
+            options={[
+              { value: "fixed", label: t("tasks.budgetType.fixed") },
+              { value: "negotiable", label: t("tasks.budgetType.negotiable") },
+            ]}
             value={formData.budgetType}
             onChange={(e) => setFormData({ ...formData, budgetType: e.target.value })}
           />
           <Textinput
-            label="Due Date"
+            label={t("tasks.fieldDueDate")}
             type="date"
             value={formData.dueDate}
             onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
           />
           <Textinput
-            label="User ID (Owner)"
+            label={t("tasks.fieldUserId")}
             value={formData.userId}
             onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
             placeholder="cuid..."

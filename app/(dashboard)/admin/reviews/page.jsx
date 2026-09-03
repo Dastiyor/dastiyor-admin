@@ -13,8 +13,10 @@ import {
   useGlobalFilter,
   usePagination,
 } from "react-table";
+import { useTranslation } from "@/context/LanguageContext";
 
 export default function AdminReviews() {
+  const { t, locale } = useTranslation();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -62,7 +64,7 @@ export default function AdminReviews() {
 
   const COLUMNS = [
     {
-      Header: "From",
+      Header: t("reviews.from"),
       accessor: "reviewer",
       Cell: (row) => (
         <div className="flex flex-col">
@@ -74,7 +76,7 @@ export default function AdminReviews() {
       ),
     },
     {
-      Header: "To",
+      Header: t("reviews.to"),
       accessor: "reviewed",
       Cell: (row) => (
         <div className="flex flex-col">
@@ -86,7 +88,7 @@ export default function AdminReviews() {
       ),
     },
     {
-      Header: "Task",
+      Header: t("reviews.task"),
       accessor: "task",
       Cell: (row) => (
         <span className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 max-w-[180px]">
@@ -95,7 +97,7 @@ export default function AdminReviews() {
       ),
     },
     {
-      Header: "Rating",
+      Header: t("reviews.rating"),
       accessor: "rating",
       Cell: (row) => (
         <span className="inline-flex items-center gap-1">
@@ -105,7 +107,7 @@ export default function AdminReviews() {
       ),
     },
     {
-      Header: "Comment",
+      Header: t("reviews.comment"),
       accessor: "comment",
       Cell: (row) => (
         <span className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 max-w-[220px]">
@@ -114,7 +116,7 @@ export default function AdminReviews() {
       ),
     },
     {
-      Header: "Date",
+      Header: t("common.date"),
       accessor: "createdAt",
       Cell: (row) => (
         <span className="text-sm text-slate-500">
@@ -128,17 +130,17 @@ export default function AdminReviews() {
       ),
     },
     {
-      Header: "Visible",
+      Header: t("reviews.visibility"),
       accessor: "hidden",
       Cell: (row) =>
         row?.cell?.value ? (
-          <span className="text-xs text-slate-400">Hidden</span>
+          <span className="text-xs text-slate-400">{t("reviews.hidden")}</span>
         ) : (
-          <span className="text-xs text-success-500">Visible</span>
+          <span className="text-xs text-success-500">{t("reviews.visible")}</span>
         ),
     },
     {
-      Header: "Actions",
+      Header: t("common.actions"),
       accessor: "id",
       Cell: (row) => {
         const review = row?.row?.original;
@@ -151,14 +153,14 @@ export default function AdminReviews() {
             }`}
             onClick={() => toggleHidden(review)}
           >
-            {isHidden ? "Unhide" : "Hide"}
+            {isHidden ? t("reviews.unhide") : t("reviews.hide")}
           </button>
         );
       },
     },
   ];
 
-  const columns = useMemo(() => COLUMNS, []);
+  const columns = useMemo(() => COLUMNS, [locale]);
   const data = useMemo(() => {
     let filtered = showHidden ? reviews : reviews.filter((r) => !r.hidden);
     if (minRating > 0) filtered = filtered.filter((r) => (r.rating || 0) <= minRating);
@@ -198,12 +200,12 @@ export default function AdminReviews() {
 
   return (
     <div>
-      <HomeBredCurbs title="Reviews & complaints" />
-      <Card title="Reviews" noborder>
+      <HomeBredCurbs title={t("reviews.title")} />
+      <Card title={t("reviews.cardTitle")} noborder>
         <div className="md:flex justify-between items-center mb-6">
           <div className="flex items-center gap-3 flex-wrap">
             <Checkbox
-              label="Show hidden"
+              label={t("reviews.showHidden")}
               value={showHidden}
               onChange={(e) => setShowHidden(e.target.checked)}
             />
@@ -211,15 +213,17 @@ export default function AdminReviews() {
               className="form-control py-2 w-max"
               value={minRating}
               onChange={(e) => setMinRating(Number(e.target.value))}
-              title="Show reviews with rating ≤"
+              title={t("reviews.ratingFilterTitle")}
             >
-              <option value={0}>All ratings</option>
-              <option value={1}>1★ only</option>
-              <option value={2}>≤ 2★</option>
-              <option value={3}>≤ 3★</option>
-              <option value={4}>≤ 4★</option>
+              <option value={0}>{t("reviews.allRatings")}</option>
+              <option value={1}>{t("reviews.ratingOnlyOne")}</option>
+              <option value={2}>{t("reviews.ratingAtMost", { n: 2 })}</option>
+              <option value={3}>{t("reviews.ratingAtMost", { n: 3 })}</option>
+              <option value={4}>{t("reviews.ratingAtMost", { n: 4 })}</option>
             </select>
-            <span className="text-xs text-slate-400">{data.length} reviews</span>
+            <span className="text-xs text-slate-400">
+              {t("reviews.count", { count: data.length })}
+            </span>
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
         </div>
@@ -280,7 +284,7 @@ export default function AdminReviews() {
                           colSpan={COLUMNS.length}
                           className="table-td text-center text-slate-500 py-8"
                         >
-                          No reviews yet.
+                          {t("reviews.empty")}
                         </td>
                       </tr>
                     ) : (
@@ -315,12 +319,12 @@ export default function AdminReviews() {
                   >
                     {[10, 20, 50].map((n) => (
                       <option key={n} value={n}>
-                        Show {n}
+                        {t("common.show", { n })}
                       </option>
                     ))}
                   </select>
                   <span className="text-sm text-slate-600 dark:text-slate-300">
-                    Page {pageIndex + 1} of {pageOptions.length || 1}
+                    {t("common.pageOf", { page: pageIndex + 1, total: pageOptions.length || 1 })}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2 mt-4 md:mt-0">
@@ -336,14 +340,14 @@ export default function AdminReviews() {
                     onClick={() => previousPage()}
                     disabled={!canPreviousPage}
                   >
-                    Prev
+                    {t("common.prev")}
                   </button>
                   <button
                     className="btn btn-sm btn-outline-dark"
                     onClick={() => nextPage()}
                     disabled={!canNextPage}
                   >
-                    Next
+                    {t("common.next")}
                   </button>
                   <button
                     className="btn btn-sm btn-outline-dark"
@@ -359,7 +363,7 @@ export default function AdminReviews() {
         )}
         <p className="text-slate-500 dark:text-slate-400 text-sm mt-4 flex items-center gap-2">
           <Icon icon="heroicons-outline:information-circle" className="text-lg" />
-          View and moderate reviews. Handle complaints: hide inappropriate reviews, contact users.
+          {t("reviews.moderationNote")}
         </p>
       </Card>
     </div>

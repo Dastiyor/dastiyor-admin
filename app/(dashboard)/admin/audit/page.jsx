@@ -5,6 +5,7 @@ import Card from "@/components/ui/Card";
 import Icon from "@/components/ui/Icon";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import GlobalFilter from "@/components/partials/table/GlobalFilter";
+import { useTranslation } from "@/context/LanguageContext";
 import {
   useTable,
   useSortBy,
@@ -12,7 +13,21 @@ import {
   usePagination,
 } from "react-table";
 
+const ACTION_KEYS = {
+  LOGIN: "audit.actionLogin",
+  REGISTER: "audit.actionRegister",
+  CREATE_TASK: "audit.actionCreateTask",
+  UPDATE_TASK: "audit.actionUpdateTask",
+  DELETE_TASK: "audit.actionDeleteTask",
+  ACCEPT_RESPONSE: "audit.actionAcceptResponse",
+  REJECT_RESPONSE: "audit.actionRejectResponse",
+  CREATE_RESPONSE: "audit.actionCreateResponse",
+  SUBSCRIBE: "audit.actionSubscribe",
+  CANCEL_SUBSCRIPTION: "audit.actionCancelSubscription",
+};
+
 export default function AdminAuditLog() {
+  const { t, locale } = useTranslation();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,16 +55,16 @@ export default function AdminAuditLog() {
 
   const COLUMNS = [
     {
-      Header: "Action",
+      Header: t("audit.action"),
       accessor: "action",
       Cell: (row) => (
         <span className="font-mono text-xs bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-1 rounded">
-          {row?.cell?.value}
+          {ACTION_KEYS[row?.cell?.value] ? t(ACTION_KEYS[row.cell.value]) : row?.cell?.value}
         </span>
       ),
     },
     {
-      Header: "User",
+      Header: t("common.user"),
       accessor: "user",
       Cell: (row) => {
         const user = row?.cell?.value;
@@ -59,12 +74,12 @@ export default function AdminAuditLog() {
             <span className="text-xs text-slate-500">{user.email}</span>
           </div>
         ) : (
-          <span className="text-xs text-slate-400">Anonymous</span>
+          <span className="text-xs text-slate-400">{t("audit.anonymous")}</span>
         );
       },
     },
     {
-      Header: "Entity",
+      Header: t("audit.entity"),
       accessor: "entity",
       Cell: (row) => (
         <div className="flex flex-col">
@@ -74,14 +89,14 @@ export default function AdminAuditLog() {
       ),
     },
     {
-      Header: "IP",
+      Header: t("audit.ip"),
       accessor: "ipAddress",
       Cell: (row) => (
         <span className="text-xs text-slate-500 font-mono">{row?.cell?.value ?? "—"}</span>
       ),
     },
     {
-      Header: "Details",
+      Header: t("audit.details"),
       accessor: "details",
       Cell: (row) => {
         const raw = row?.cell?.value;
@@ -99,7 +114,7 @@ export default function AdminAuditLog() {
       },
     },
     {
-      Header: "Time",
+      Header: t("audit.time"),
       accessor: "createdAt",
       Cell: (row) => (
         <span className="text-xs text-slate-500 whitespace-nowrap">
@@ -111,7 +126,7 @@ export default function AdminAuditLog() {
     },
   ];
 
-  const columns = useMemo(() => COLUMNS, []);
+  const columns = useMemo(() => COLUMNS, [locale]);
   const data = useMemo(() => logs, [logs]);
 
   const tableInstance = useTable(
@@ -149,7 +164,7 @@ export default function AdminAuditLog() {
 
   return (
     <div>
-      <HomeBredCurbs title="Audit Log" />
+      <HomeBredCurbs title={t("audit.title")} />
       <Card noborder>
         <div className="md:flex justify-between items-center mb-6 gap-4 flex-wrap">
           <div className="flex items-center gap-3">
@@ -158,14 +173,14 @@ export default function AdminAuditLog() {
               value={actionFilter}
               onChange={(e) => setActionFilter(e.target.value)}
             >
-              <option value="">All actions</option>
+              <option value="">{t("audit.allActions")}</option>
               {COMMON_ACTIONS.map((a) => (
-                <option key={a} value={a}>{a}</option>
+                <option key={a} value={a}>{t(ACTION_KEYS[a])}</option>
               ))}
             </select>
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
-          <span className="text-xs text-slate-400">{logs.length} entries loaded</span>
+          <span className="text-xs text-slate-400">{t("audit.entriesLoaded", { count: logs.length })}</span>
         </div>
 
         {error && (
@@ -176,7 +191,7 @@ export default function AdminAuditLog() {
         )}
 
         {loading ? (
-          <div className="p-5 text-center text-slate-500">Loading...</div>
+          <div className="p-5 text-center text-slate-500">{t("common.loading")}</div>
         ) : (
           <>
             <div className="overflow-x-auto -mx-6">
@@ -212,7 +227,7 @@ export default function AdminAuditLog() {
                     {page.length === 0 ? (
                       <tr>
                         <td colSpan={COLUMNS.length} className="table-td text-center text-slate-500 py-8">
-                          No audit log entries found.
+                          {t("audit.noEntries")}
                         </td>
                       </tr>
                     ) : (
@@ -245,19 +260,19 @@ export default function AdminAuditLog() {
                   onChange={(e) => setPageSize(Number(e.target.value))}
                 >
                   {[25, 50, 100].map((n) => (
-                    <option key={n} value={n}>Show {n}</option>
+                    <option key={n} value={n}>{t("common.show", { n })}</option>
                   ))}
                 </select>
                 <span className="text-sm text-slate-600 dark:text-slate-300">
-                  Page {pageIndex + 1} of {pageOptions.length || 1}
+                  {t("common.pageOf", { page: pageIndex + 1, total: pageOptions.length || 1 })}
                 </span>
               </div>
               <div className="flex items-center space-x-2 mt-4 md:mt-0">
                 <button className="btn btn-sm btn-outline-dark" onClick={() => gotoPage(0)} disabled={!canPreviousPage}>
                   <Icon icon="heroicons:chevron-double-left-solid" />
                 </button>
-                <button className="btn btn-sm btn-outline-dark" onClick={() => previousPage()} disabled={!canPreviousPage}>Prev</button>
-                <button className="btn btn-sm btn-outline-dark" onClick={() => nextPage()} disabled={!canNextPage}>Next</button>
+                <button className="btn btn-sm btn-outline-dark" onClick={() => previousPage()} disabled={!canPreviousPage}>{t("common.prev")}</button>
+                <button className="btn btn-sm btn-outline-dark" onClick={() => nextPage()} disabled={!canNextPage}>{t("common.next")}</button>
                 <button className="btn btn-sm btn-outline-dark" onClick={() => gotoPage(pageCount - 1)} disabled={!canNextPage}>
                   <Icon icon="heroicons:chevron-double-right-solid" />
                 </button>

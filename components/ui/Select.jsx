@@ -2,7 +2,9 @@ import React, { Fragment } from "react";
 import Icon from "@/components/ui/Icon";
 const Select = ({
   label,
-  placeholder = "Select Option",
+  // ponytail: language-neutral dash — Select is shared with server-rendered
+  // template pages, so it cannot pull in the client-only translation context.
+  placeholder = "—",
   classLabel = "form-label",
   className = "",
   classGroup = "",

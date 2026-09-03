@@ -11,6 +11,7 @@ import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import GlobalFilter from "@/components/partials/table/GlobalFilter";
 import RowSelectCheckbox from "@/components/partials/table/RowSelectCheckbox";
 import Tooltip from "@/components/ui/Tooltip";
+import { useTranslation } from "@/context/LanguageContext";
 import { bulkDelete } from "@/lib/bulkDelete";
 import {
   useTable,
@@ -31,6 +32,7 @@ function parseSubcategories(val) {
 }
 
 export default function AdminCategories() {
+  const { t, locale } = useTranslation();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -81,7 +83,7 @@ export default function AdminCategories() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Delete this category?")) return;
+    if (!confirm(t("categories.confirmDelete"))) return;
     try {
       const res = await fetch(`/api/categories/${id}`, {
         method: "DELETE",
@@ -128,14 +130,14 @@ export default function AdminCategories() {
 
   const COLUMNS = [
     {
-      Header: "Name",
+      Header: t("categories.name"),
       accessor: "name",
       Cell: (row) => (
         <span className="font-medium text-slate-900 dark:text-white">{row?.cell?.value ?? "—"}</span>
       ),
     },
     {
-      Header: "Slug",
+      Header: t("categories.slug"),
       accessor: "slug",
       Cell: (row) => (
         <span className="text-sm text-slate-600 dark:text-slate-300 font-mono">
@@ -144,7 +146,7 @@ export default function AdminCategories() {
       ),
     },
     {
-      Header: "Subcategories",
+      Header: t("categories.subcategories"),
       accessor: "subcategories",
       Cell: (row) => {
         const subs = parseSubcategories(row?.cell?.value);
@@ -156,20 +158,20 @@ export default function AdminCategories() {
       },
     },
     {
-      Header: "Order",
+      Header: t("categories.order"),
       accessor: "order",
       Cell: (row) => (
         <span className="text-sm text-slate-500">{row?.cell?.value ?? 0}</span>
       ),
     },
     {
-      Header: "Actions",
+      Header: t("common.actions"),
       accessor: "id",
       Cell: (row) => {
         const cat = row?.row?.original;
         return (
           <div className="flex space-x-2 rtl:space-x-reverse">
-            <Tooltip content="Edit" placement="top">
+            <Tooltip content={t("common.edit")} placement="top">
               <button
                 type="button"
                 className="action-btn"
@@ -178,7 +180,7 @@ export default function AdminCategories() {
                 <Icon icon="heroicons:pencil-square" />
               </button>
             </Tooltip>
-            <Tooltip content="Delete" placement="top" theme="danger">
+            <Tooltip content={t("common.delete")} placement="top" theme="danger">
               <button
                 type="button"
                 className="action-btn text-danger-500"
@@ -193,7 +195,7 @@ export default function AdminCategories() {
     },
   ];
 
-  const columns = useMemo(() => COLUMNS, []);
+  const columns = useMemo(() => COLUMNS, [locale]);
   const data = useMemo(() => categories, [categories]);
 
   const tableInstance = useTable(
@@ -251,10 +253,10 @@ export default function AdminCategories() {
   const handleBulkDelete = async () => {
     const ids = selectedFlatRows.map((r) => r.original.id);
     if (!ids.length) return;
-    if (!confirm(`Delete ${ids.length} categories? This cannot be undone.`)) return;
+    if (!confirm(t("categories.confirmBulkDelete", { count: ids.length }))) return;
     const failed = await bulkDelete("/api/categories", ids);
     if (failed.length) {
-      alert(`${failed.length} of ${ids.length} not deleted:\n${failed.join("\n")}`);
+      alert(`${t("categories.bulkDeleteFailed", { failed: failed.length, total: ids.length })}\n${failed.join("\n")}`);
     }
     toggleAllRowsSelected(false);
     fetchCategories();
@@ -262,14 +264,14 @@ export default function AdminCategories() {
 
   return (
     <div>
-      <HomeBredCurbs title="Categories" />
-      <Card title="Service categories" noborder>
+      <HomeBredCurbs title={t("categories.title")} />
+      <Card title={t("categories.serviceCategories")} noborder>
         <div className="md:flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
-            <Button text="Add category" className="btn-success btn-sm" onClick={handleCreate} />
+            <Button text={t("categories.add")} className="btn-success btn-sm" onClick={handleCreate} />
             {selectedFlatRows.length > 0 && (
               <Button
-                text={`Delete ${selectedFlatRows.length}`}
+                text={t("common.deleteSelected", { count: selectedFlatRows.length })}
                 className="btn-danger btn-sm"
                 onClick={handleBulkDelete}
               />
@@ -284,7 +286,7 @@ export default function AdminCategories() {
           </p>
         )}
         {loading ? (
-          <div className="p-5 text-center text-slate-500">Loading...</div>
+          <div className="p-5 text-center text-slate-500">{t("common.loading")}</div>
         ) : (
           <>
             <div className="overflow-x-auto -mx-6">
@@ -329,7 +331,7 @@ export default function AdminCategories() {
                           colSpan={COLUMNS.length}
                           className="table-td text-center text-slate-500 py-8"
                         >
-                          No categories yet. Add one to get started.
+                          {t("categories.empty")}
                         </td>
                       </tr>
                     ) : (
@@ -364,12 +366,12 @@ export default function AdminCategories() {
                   >
                     {[10, 25, 50].map((n) => (
                       <option key={n} value={n}>
-                        Show {n}
+                        {t("common.show", { n })}
                       </option>
                     ))}
                   </select>
                   <span className="text-sm text-slate-600 dark:text-slate-300">
-                    Page {pageIndex + 1} of {pageOptions.length || 1}
+                    {t("common.pageOf", { page: pageIndex + 1, total: pageOptions.length || 1 })}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2 mt-4 md:mt-0">
@@ -385,14 +387,14 @@ export default function AdminCategories() {
                     onClick={() => previousPage()}
                     disabled={!canPreviousPage}
                   >
-                    Prev
+                    {t("common.prev")}
                   </button>
                   <button
                     className="btn btn-sm btn-outline-dark"
                     onClick={() => nextPage()}
                     disabled={!canNextPage}
                   >
-                    Next
+                    {t("common.next")}
                   </button>
                   <button
                     className="btn btn-sm btn-outline-dark"
@@ -408,17 +410,17 @@ export default function AdminCategories() {
         )}
         <p className="text-slate-500 dark:text-slate-400 text-sm mt-4 flex items-center gap-2">
           <Icon icon="heroicons-outline:information-circle" className="text-lg" />
-          Manage service categories and subcategories. Add, edit, reorder, or delete. Use slug in APIs; subcategories as comma-separated.
+          {t("categories.hint")}
         </p>
       </Card>
 
       <Modal
         activeModal={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={currentCategory ? "Edit category" : "Add category"}
+        title={currentCategory ? t("categories.edit") : t("categories.add")}
         footerContent={
           <Button
-            text={currentCategory ? "Update" : "Create"}
+            text={currentCategory ? t("common.update") : t("common.create")}
             className="btn-dark"
             onClick={handleSubmit}
           />
@@ -426,28 +428,28 @@ export default function AdminCategories() {
       >
         <div className="space-y-4">
           <Textinput
-            label="Name"
+            label={t("categories.name")}
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="e.g. Cleaning"
+            placeholder={t("categories.namePlaceholder")}
           />
           <Textinput
-            label="Slug"
+            label={t("categories.slug")}
             value={formData.slug}
             onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-            placeholder="cleaning (auto from name if empty)"
+            placeholder={t("categories.slugPlaceholder")}
           />
           <Textinput
-            label="Order"
+            label={t("categories.order")}
             type="number"
             value={formData.order}
             onChange={(e) => setFormData({ ...formData, order: e.target.value })}
           />
           <Textarea
-            label="Subcategories (comma-separated)"
+            label={t("categories.subcategoriesLabel")}
             value={formData.subcategories}
             onChange={(e) => setFormData({ ...formData, subcategories: e.target.value })}
-            placeholder="Deep clean, Regular clean, Move-out"
+            placeholder={t("categories.subcategoriesPlaceholder")}
           />
         </div>
       </Modal>

@@ -21,8 +21,11 @@ if (!url) {
 const write = process.argv.includes("--write");
 const prisma = new PrismaClient({ datasources: { db: { url } } });
 
+// Unicode-aware: category names are Russian, so [^a-z0-9] would strip every
+// character and collapse each name to an empty slug (unique-constraint clash
+// on the second insert). \p{L}/\p{N} keep Cyrillic letters and digits.
 const slugify = (name) =>
-  name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  name.trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "");
 
 (async () => {
   const existing = await prisma.category.findMany({ select: { slug: true, order: true } });
