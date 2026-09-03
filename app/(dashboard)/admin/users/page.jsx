@@ -13,6 +13,7 @@ import GlobalFilter from "@/components/partials/table/GlobalFilter";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import { exportCsv } from "@/lib/exportCsv";
+import { bulkDelete } from "@/lib/bulkDelete";
 import {
   useTable,
   useRowSelect,
@@ -312,9 +313,23 @@ export default function AdminUsers() {
     setPageSize,
     setGlobalFilter,
     prepareRow,
+    selectedFlatRows,
+    toggleAllRowsSelected,
   } = tableInstance;
 
   const { globalFilter, pageIndex, pageSize } = state;
+
+  const handleBulkDelete = async () => {
+    const ids = selectedFlatRows.map((r) => r.original.id);
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} users? This cannot be undone.`)) return;
+    const failed = await bulkDelete("/api/users", ids);
+    if (failed.length) {
+      alert(`${failed.length} of ${ids.length} not deleted:\n${failed.join("\n")}`);
+    }
+    toggleAllRowsSelected(false);
+    fetchUsers();
+  };
 
   return (
     <div>
@@ -323,6 +338,13 @@ export default function AdminUsers() {
         <div className="md:flex justify-between items-center mb-6 gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <Button text="Add User" className="btn-success btn-sm" onClick={handleCreate} />
+            {selectedFlatRows.length > 0 && (
+              <Button
+                text={`Delete ${selectedFlatRows.length}`}
+                className="btn-danger btn-sm"
+                onClick={handleBulkDelete}
+              />
+            )}
             <button
               className="btn btn-sm btn-outline-dark"
               onClick={() => exportCsv("users.csv", users.map((u) => ({

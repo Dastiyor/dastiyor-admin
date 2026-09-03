@@ -14,6 +14,7 @@ import GlobalFilter from "@/components/partials/table/GlobalFilter";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import { exportCsv } from "@/lib/exportCsv";
+import { bulkDelete } from "@/lib/bulkDelete";
 import {
   useTable,
   useRowSelect,
@@ -325,9 +326,23 @@ export default function AdminTasks() {
     setPageSize,
     setGlobalFilter,
     prepareRow,
+    selectedFlatRows,
+    toggleAllRowsSelected,
   } = tableInstance;
 
   const { globalFilter, pageIndex, pageSize } = state;
+
+  const handleBulkDelete = async () => {
+    const ids = selectedFlatRows.map((r) => r.original.id);
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} tasks? This cannot be undone.`)) return;
+    const failed = await bulkDelete("/api/tasks", ids);
+    if (failed.length) {
+      alert(`${failed.length} of ${ids.length} not deleted:\n${failed.join("\n")}`);
+    }
+    toggleAllRowsSelected(false);
+    fetchTasks();
+  };
 
   return (
     <div>
@@ -336,6 +351,13 @@ export default function AdminTasks() {
         <div className="md:flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
             <Button text="Add Task" className="btn-success btn-sm" onClick={handleCreate} />
+            {selectedFlatRows.length > 0 && (
+              <Button
+                text={`Delete ${selectedFlatRows.length}`}
+                className="btn-danger btn-sm"
+                onClick={handleBulkDelete}
+              />
+            )}
             <button
               className="btn btn-sm btn-outline-dark"
               onClick={() => exportCsv("tasks.csv", tasks.map((t) => ({
