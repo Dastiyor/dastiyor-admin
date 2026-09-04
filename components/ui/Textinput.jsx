@@ -5,7 +5,9 @@ import "cleave.js/dist/addons/cleave-phone.us";
 const Textinput = ({
   type,
   label,
-  placeholder = "Add placeholder",
+  // ponytail: no default — the template's "Add placeholder" leaked into the
+  // login password field. A field wanting a hint passes one.
+  placeholder = "",
   classLabel = "form-label",
   className = "",
   classGroup = "",
