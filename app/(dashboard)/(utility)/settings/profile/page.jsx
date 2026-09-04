@@ -7,6 +7,8 @@ import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
 import { useTranslation } from "@/context/LanguageContext";
 import { toast } from "react-toastify";
+import { useDispatch, useSelector } from "react-redux";
+import { setAuth } from "@/components/partials/auth/store";
 
 const defaultProfile = {
   fullName: "",
@@ -20,16 +22,40 @@ const defaultProfile = {
   zip: "",
 };
 
+const FALLBACK_AVATAR = "/assets/images/all-img/user.png";
+
 const ProfileSettings = () => {
   const { t } = useTranslation();
-  const [avatar, setAvatar] = useState("/assets/images/users/user-1.jpg");
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth?.user);
+  const [avatar, setAvatar] = useState(user?.avatar || FALLBACK_AVATAR);
   const [data, setData] = useState(defaultProfile);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const handleAvatarChange = (e) => {
+  useEffect(() => {
+    if (user?.avatar) setAvatar(user.avatar);
+  }, [user?.avatar]);
+
+  const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
-    if (file) setAvatar(URL.createObjectURL(file));
+    if (!file) return;
+    const preview = URL.createObjectURL(file);
+    setAvatar(preview); // show it while the upload runs
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/upload/avatar", { method: "POST", body, credentials: "include" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || res.statusText);
+      setAvatar(json.url);
+      dispatch(setAuth({ user: { ...user, avatar: json.url } }));
+    } catch (err) {
+      setAvatar(user?.avatar || FALLBACK_AVATAR);
+      toast.error(err.message);
+    } finally {
+      URL.revokeObjectURL(preview);
+    }
   };
 
   useEffect(() => {
