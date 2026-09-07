@@ -62,6 +62,8 @@ model Task {
   urgency         String         @default("normal")
   dueDate         DateTime?
   status          String         @default("OPEN")
+  featured        Boolean        @default(false)
+  featuredAt      DateTime?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   userId          String
@@ -81,6 +83,7 @@ model Task {
   @@index([userId])
   @@index([createdAt])
   @@index([status, category, city])
+  @@index([status, featured, featuredAt])
 }
 
 model Response {

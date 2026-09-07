@@ -37,6 +37,7 @@ export default function AdminTasks() {
   const [searchInput, setSearchInput] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [featuredOnly, setFeaturedOnly] = useState(false);
   const [categories, setCategories] = useState([]);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -153,6 +154,30 @@ export default function AdminTasks() {
     }
   };
 
+  const featuredCount = useMemo(() => tasks.filter((x) => x.featured).length, [tasks]);
+
+  const toggleFeatured = async (task) => {
+    const turningOn = !task.featured;
+    if (turningOn && task.status !== "OPEN" && !confirm(t("tasks.featureNotOpenHint"))) return;
+    try {
+      const res = await fetch(`/api/tasks/${task.id}/featured`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ featured: !task.featured }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      setTasks((prev) =>
+        prev.map((x) =>
+          x.id === task.id ? { ...x, featured: data.featured, featuredAt: data.featuredAt } : x
+        )
+      );
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
   const handleSubmit = async () => {
     const url = currentTask ? `/api/tasks/${currentTask.id}` : "/api/tasks";
     const method = currentTask ? "PUT" : "POST";
@@ -241,6 +266,34 @@ export default function AdminTasks() {
       ),
     },
     {
+      Header: t("tasks.colFeatured"),
+      accessor: "featured",
+      Cell: (row) => {
+        const task = row?.row?.original;
+        const isOn = !!task?.featured;
+        const atCap = !isOn && featuredCount >= 3;
+        return (
+          <Tooltip
+            content={isOn ? t("tasks.unfeature") : atCap ? t("tasks.featureCapReached") : t("tasks.feature")}
+            placement="top"
+            arrow
+          >
+            <button
+              type="button"
+              className="action-btn"
+              disabled={atCap}
+              onClick={() => toggleFeatured(task)}
+            >
+              <Icon
+                icon={isOn ? "heroicons:star-solid" : "heroicons:star"}
+                className={isOn ? "text-warning-500" : atCap ? "opacity-30" : ""}
+              />
+            </button>
+          </Tooltip>
+        );
+      },
+    },
+    {
       Header: t("common.actions"),
       accessor: "action",
       Cell: (row) => (
@@ -260,8 +313,11 @@ export default function AdminTasks() {
     },
   ];
 
-  const columns = useMemo(() => COLUMNS, [locale]);
-  const data = useMemo(() => tasks, [tasks]);
+  const columns = useMemo(() => COLUMNS, [locale, featuredCount]);
+  const data = useMemo(
+    () => (featuredOnly ? tasks.filter((x) => x.featured) : tasks),
+    [tasks, featuredOnly]
+  );
 
   const tableInstance = useTable(
     {
@@ -351,6 +407,9 @@ export default function AdminTasks() {
             >
               {t("common.exportCsv")}
             </button>
+            <span className="text-xs text-slate-400">
+              {t("tasks.featuredCount", { count: featuredCount, max: 3 })}
+            </span>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex gap-2">
@@ -404,6 +463,15 @@ export default function AdminTasks() {
                 <button className="btn btn-sm btn-outline-dark" onClick={() => { setDateFrom(""); setDateTo(""); }}>{t("tasks.clear")}</button>
               )}
             </div>
+            <label className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300 cursor-pointer whitespace-nowrap">
+              <input
+                type="checkbox"
+                className="form-checkbox"
+                checked={featuredOnly}
+                onChange={(e) => setFeaturedOnly(e.target.checked)}
+              />
+              {t("tasks.featuredOnly")}
+            </label>
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
         </div>
