@@ -46,6 +46,13 @@ model User {
   assignedTasks         Task[]             @relation("AssignedTasks")
   tasks                 Task[]             @relation("UserTasks")
   favoriteTasks         TaskFavorite[]
+  // Mirrored from dastiyor-frontend (provider profile, portfolio, sourcing). Keep in sync:
+  // a `prisma db push` from an outdated copy would try to drop these.
+  experienceYears       Int?
+  city                  String?
+  categories            String[]           @default([])
+  portfolio             PortfolioProject[]
+  sourcingRequests      SourcingRequest[]
 }
 
 model Task {
@@ -111,6 +118,7 @@ model Subscription {
   startDate DateTime @default(now())
   endDate   DateTime
   isActive  Boolean  @default(true)
+  source    String   @default("web") // 'web' (SmartPay) | 'store' (App Store / Google Play)
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id])
 
@@ -290,5 +298,42 @@ model DeviceToken {
   userId    String
   User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+}
+
+model PortfolioProject {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  images      String[] @default([])
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, order])
+}
+
+model SourcingRequest {
+  id              String    @id @default(cuid())
+  category        String
+  city            String
+  headcount       Int
+  experienceYears Int?
+  budget          String?
+  deadline        DateTime?
+  description     String
+  contactName     String
+  contactPhone    String
+  contactEmail    String?
+  status          String    @default("NEW") // NEW, IN_PROGRESS, PROPOSED, CLOSED
+  adminNotes      String?
+  proposedIds     String[]  @default([])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
   @@index([userId])
 }

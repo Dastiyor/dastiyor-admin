@@ -5,6 +5,7 @@ export const menuItems = [
   { title: "Responses", translationKey: "menu.responses", icon: "heroicons-outline:chat-bubble-left-right", link: "admin/responses" },
   { title: "Categories", translationKey: "menu.categories", icon: "heroicons-outline:folder", link: "admin/categories" },
   { title: "Subscriptions & payments", translationKey: "menu.subscriptions", icon: "heroicons-outline:credit-card", link: "admin/subscriptions" },
+  { title: "Sourcing requests", translationKey: "menu.sourcing", icon: "heroicons-outline:user-group", link: "admin/sourcing" },
   { title: "Reviews & complaints", translationKey: "menu.reviews", icon: "heroicons-outline:star", link: "admin/reviews" },
   { title: "Notifications", translationKey: "menu.notifications", icon: "heroicons-outline:bell-alert", link: "admin/notifications" },
   { title: "Conversations", translationKey: "menu.conversations", icon: "heroicons-outline:chat-bubble-left-ellipsis", link: "admin/conversations" },
