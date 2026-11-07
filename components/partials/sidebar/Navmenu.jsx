@@ -3,8 +3,6 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Collapse } from "react-collapse";
 import Icon from "@/components/ui/Icon";
-import { toggleActiveChat } from "@/components/partials/app/chat/store";
-import { useDispatch } from "react-redux";
 import useMobileMenu from "@/hooks/useMobileMenu";
 import Submenu from "./Submenu";
 import { useTranslation } from "@/context/LanguageContext";
@@ -26,7 +24,6 @@ const Navmenu = ({ menus }) => {
   const locationName = location.replace("/", "");
 
   const [mobileMenu, setMobileMenu] = useMobileMenu();
-  const dispatch = useDispatch();
 
   useEffect(() => {
     let submenuIndex = null;
@@ -45,7 +42,6 @@ const Navmenu = ({ menus }) => {
     });
 
     setActiveSubmenu(submenuIndex);
-    dispatch(toggleActiveChat(false));
     if (mobileMenu) {
       setMobileMenu(false);
     }

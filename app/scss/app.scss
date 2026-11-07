@@ -48,51 +48,11 @@
       @apply mr-4 mb-2;
     }
   }
-
-  html[dir="rtl"] {
-    .recharts-wrapper {
-      direction: rtl;
-    }
-    .recharts-yAxis {
-      .recharts-text {
-        text-anchor: start;
-      }
-    }
-  }
-  .dastiyor-app {
-    .leaflet-control {
-      z-index: 0 !important;
-    }
-    .leaflet-control-container {
-      z-index: 555 !important;
-      position: relative;
-    }
-    .recharts-curve.recharts-tooltip-cursor {
-      display: none;
-    }
-    .recharts-wrapper.bar-chart {
-      .recharts-tooltip-cursor {
-        fill: transparent;
-      }
-    }
-    .recharts-tooltip-wrapper {
-      border: none !important;
-    }
-
-    // .recharts-cartesian-grid line,
-    // .recharts-polar-grid-angle line,
-    // .recharts-yAxis line,
-    // .recharts-xAxis line {
-    //   @apply stroke-black-200 dark:stroke-slate-700;
-    // }
-  }
 }
 @layer components {
   @import "components/table.scss";
-  @import "components/map.scss";
   @import "components/progress";
   @import "components/tippy";
-  @import "components/swiper";
   @import "components/alert";
   @import "components/card";
   @import "components/auth";
@@ -101,7 +61,6 @@
   @import "components/typography";
   @import "components/form";
   @import "components/input-group";
-  @import "components/react-select";
   @import "components/pagination";
   @import "components/breadcrumbs";
   @import "layout/header";
@@ -111,8 +70,6 @@
   @import "utility/mix";
   @import "utility/loading";
   @import "utility/css-animation";
-  @import "utility/calander";
-  @import "utility/full-calender";
   @import "components/print.scss";
 }
 @layer utilities {

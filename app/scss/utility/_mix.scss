@@ -90,46 +90,6 @@
     }
   }
 }
-// rich editor
-.dastiyor-app {
-  .ql-editor {
-    min-height: 120px;
-  }
-  .ql-toolbar.ql-snow {
-    @apply border-none p-0 mb-2;
-  }
-  .ql-container.ql-snow {
-    @apply bg-[#FBFBFB] dark:bg-slate-900 border-none text-base;
-  }
-  .ql-editor {
-    @apply border-slate-200 dark:border-slate-700 border rounded text-base;
-  }
-}
-.dark {
-  .ql-snow .ql-stroke {
-    @apply stroke-slate-300;
-  }
-  .ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-label {
-    @apply bg-slate-700;
-  }
-  .ql-snow.ql-toolbar button:hover,
-  .ql-snow .ql-toolbar button:hover,
-  .ql-snow.ql-toolbar button:focus,
-  .ql-snow .ql-toolbar button:focus,
-  .ql-snow.ql-toolbar .ql-picker-label:hover,
-  .ql-snow .ql-toolbar .ql-picker-label:hover,
-  .ql-snow.ql-toolbar .ql-picker-item:hover,
-  .ql-snow .ql-toolbar .ql-picker-item:hover {
-    @apply bg-slate-700;
-  }
-  .ql-picker-label {
-    @apply text-slate-300;
-  }
-  .ql-snow .ql-picker.ql-expanded .ql-picker-label {
-    @apply bg-slate-300 border-slate-700;
-  }
-}
-
 // label
 .date-label {
   @apply text-xs text-slate-400 dark:text-slate-400 mb-1;
