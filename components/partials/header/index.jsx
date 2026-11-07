@@ -1,7 +1,6 @@
 import React from "react";
 import Icon from "@/components/ui/Icon";
 import SwitchDark from "./Tools/SwitchDark";
-import HorizentalMenu from "./Tools/HorizentalMenu";
 import useWidth from "@/hooks/useWidth";
 import useSidebar from "@/hooks/useSidebar";
 import useNavbarType from "@/hooks/useNavbarType";
@@ -93,25 +92,6 @@ const Header = ({ className = "custom-class" }) => {
               <SearchModal />
             </div>
           )}
-          {/* For Horizontal  */}
-          {menuType === "horizontal" && (
-            <div className="flex items-center space-x-4 rtl:space-x-reverse">
-              <Logo />
-              {/* open mobile menu handlaer*/}
-              {width <= breakpoints.xl && (
-                <div
-                  className="cursor-pointer text-slate-900 dark:text-white text-2xl"
-                  onClick={handleOpenMobileMenu}
-                >
-                  <Icon icon="heroicons-outline:menu-alt-3" />
-                </div>
-              )}
-            </div>
-          )}
-          {/*  Horizontal  Main Menu */}
-          {menuType === "horizontal" && width >= breakpoints.xl ? (
-            <HorizentalMenu />
-          ) : null}
           {/* Nav Tools  */}
           <div className="nav-tools flex items-center lg:space-x-5 space-x-3 rtl:space-x-reverse">
             <Language />

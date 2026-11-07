@@ -1,88 +1,48 @@
-import React from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import Icon from "@/components/ui/Icon";
+"use client";
 
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useSelector } from "react-redux";
+import Icon from "@/components/ui/Icon";
+import { useTranslation } from "@/context/LanguageContext";
+
+/** Bottom bar on phones: conversations, your profile, complaints. */
 const MobileFooter = () => {
-  const router = useRouter();
+  const pathname = usePathname();
+  const { t } = useTranslation();
+  const user = useSelector((state) => state.auth?.user);
+  const tone = (href) =>
+    pathname?.startsWith(href) ? "text-primary-500" : "text-slate-600 dark:text-slate-300";
+
+  const Item = ({ href, icon, label }) => (
+    <Link href={href} className={`flex flex-col items-center ${tone(href)}`}>
+      <Icon icon={icon} className="text-[20px] mb-1" />
+      <span className="block text-[11px]">{label}</span>
+    </Link>
+  );
+
   return (
     <div className="bg-white bg-no-repeat custom-dropshadow footer-bg dark:bg-slate-700 flex justify-around items-center backdrop-filter backdrop-blur-[40px] fixed left-0 w-full z-[9999] bottom-0 py-[12px] px-4">
-      <Link href="chat">
-        <div>
-          <span
-            className={` relative cursor-pointer rounded-full text-[20px] flex flex-col items-center justify-center mb-1
-         ${
-           router.pathname === "chat"
-             ? "text-primary-500"
-             : "dark:text-white text-slate-900"
-         }
-          `}
-          >
-            <Icon icon="heroicons-outline:mail" />
-            <span className="absolute right-[5px] lg:top-0 -top-2 h-4 w-4 bg-red-500 text-[8px] font-semibold flex flex-col items-center justify-center rounded-full text-white z-[99]">
-              10
-            </span>
-          </span>
-          <span
-            className={` block text-[11px]
-          ${
-            router.pathname === "chat"
-              ? "text-primary-500"
-              : "text-slate-600 dark:text-slate-300"
-          }
-          `}
-          >
-            Messages
-          </span>
-        </div>
-      </Link>
+      <Item href="/admin/conversations" icon="heroicons-outline:chat-bubble-left-ellipsis" label={t("menu.conversations")} />
       <Link
-        href="profile"
+        href="/settings/profile"
+        aria-label={t("settings.profile.title")}
         className="relative bg-white bg-no-repeat backdrop-filter backdrop-blur-[40px] rounded-full footer-bg dark:bg-slate-700 h-[65px] w-[65px] z-[-1] -mt-[40px] flex justify-center items-center"
       >
-        <div className="h-[50px] w-[50px] rounded-full relative left-[0px] top-[0px] custom-dropshadow">
-          <img
-            src="/assets/images/users/user-1.jpg"
-            alt=""
-            className={` w-full h-full rounded-full
-          ${
-            router.pathname === "profile"
-              ? "border-2 border-primary-500"
-              : "border-2 border-slate-100"
-          }
-              `}
-          />
-        </div>
+        <span
+          className={`h-[50px] w-[50px] rounded-full custom-dropshadow overflow-hidden flex items-center justify-center bg-slate-600 text-white text-lg border-2 ${
+            pathname?.startsWith("/settings/profile") ? "border-primary-500" : "border-slate-100"
+          }`}
+        >
+          {user?.avatar ? (
+            <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+          ) : (
+            user?.fullName?.charAt(0) || <Icon icon="heroicons-outline:user" />
+          )}
+        </span>
       </Link>
-      <Link href="notifications">
-        <div>
-          <span
-            className={` relative cursor-pointer rounded-full text-[20px] flex flex-col items-center justify-center mb-1
-      ${
-        router.pathname === "notifications"
-          ? "text-primary-500"
-          : "dark:text-white text-slate-900"
-      }
-          `}
-          >
-            <Icon icon="heroicons-outline:bell" />
-            <span className="absolute right-[17px] lg:top-0 -top-2 h-4 w-4 bg-red-500 text-[8px] font-semibold flex flex-col items-center justify-center rounded-full text-white z-[99]">
-              2
-            </span>
-          </span>
-          <span
-            className={` block text-[11px]
-         ${
-           router.pathname === "notifications"
-             ? "text-primary-500"
-             : "text-slate-600 dark:text-slate-300"
-         }
-        `}
-          >
-            Notifications
-          </span>
-        </div>
-      </Link>
+      <Item href="/admin/reports" icon="heroicons-outline:flag" label={t("menu.reports")} />
     </div>
   );
 };
