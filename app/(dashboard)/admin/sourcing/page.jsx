@@ -42,6 +42,7 @@ export default function AdminSourcing() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reload only when the status filter changes
   useEffect(() => { load(); }, [filter]);
 
   const open = (r) => {
@@ -58,6 +59,7 @@ export default function AdminSourcing() {
       if (res.ok) setFound((await res.json()).data || []);
     }, 300);
     return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- search on typing only; draft is just a guard
   }, [query]);
 
   const save = async () => {

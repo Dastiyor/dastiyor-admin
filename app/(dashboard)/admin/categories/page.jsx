@@ -198,6 +198,8 @@ export default function AdminCategories() {
     },
   ];
 
+  // Rebuilt only when the language changes; the cell handlers it captures are stable.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const columns = useMemo(() => COLUMNS, [locale]);
   const data = useMemo(() => categories, [categories]);
 

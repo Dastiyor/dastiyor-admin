@@ -45,6 +45,7 @@ const Navmenu = ({ menus }) => {
     if (mobileMenu) {
       setMobileMenu(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync the open submenu on navigation only
   }, [router, location]);
 
   return (
