@@ -1,54 +1,39 @@
 import { prisma } from "@/lib/prisma";
+import { withAdmin, readJson, logAction, HttpError } from "@/lib/api";
+import { MAX_FEATURED } from "@/lib/tasks";
 import { NextResponse } from "next/server";
 
-const MAX_FEATURED = 3;
+export const PATCH = withAdmin(async (request, { params, admin }) => {
+  const on = !!(await readJson(request)).featured;
 
-export async function PATCH(request, { params }) {
+  let updated;
   try {
-    const { featured } = (await request.json()) || {};
-    const on = !!featured;
-
-    const updated = await prisma.$transaction(async (tx) => {
-      if (on) {
-        const cur = await tx.task.findUnique({
-          where: { id: params.id },
-          select: { featured: true },
-        });
-        if (!cur) throw new Error("NOT_FOUND");
-        if (!cur.featured) {
-          const count = await tx.task.count({ where: { featured: true } });
-          if (count >= MAX_FEATURED) throw new Error("LIMIT");
-        }
+    updated = await prisma.$transaction(async (tx) => {
+      const cur = await tx.task.findUnique({ where: { id: params.id }, select: { featured: true } });
+      if (!cur) throw new HttpError(404, "Task not found");
+      if (on && !cur.featured) {
+        const count = await tx.task.count({ where: { featured: true } });
+        if (count >= MAX_FEATURED) throw new HttpError(409, "FEATURE_LIMIT");
       }
       return tx.task.update({
         where: { id: params.id },
-        data: on
-          ? { featured: true, featuredAt: new Date() }
-          : { featured: false, featuredAt: null },
+        data: on ? { featured: true, featuredAt: new Date() } : { featured: false, featuredAt: null },
       });
     });
-
-    prisma.actionLog
-      .create({
-        data: {
-          action: on ? "admin_feature_task" : "admin_unfeature_task",
-          entity: "Task",
-          entityId: params.id,
-        },
-      })
-      .catch(() => {});
-
-    return NextResponse.json(updated);
   } catch (e) {
-    if (e.message === "NOT_FOUND")
-      return NextResponse.json({ error: "Task not found" }, { status: 404 });
-    if (e.message === "LIMIT" || String(e.message).includes("Featured task limit reached"))
-      return NextResponse.json(
-        {
-          error: `Можно закрепить не более ${MAX_FEATURED} заданий. Сначала снимите закрепление с другого.`,
-        },
-        { status: 409 }
+    // Also match the limit error the database itself raises for the same cap.
+    if (e.message === "FEATURE_LIMIT" || String(e.message).includes("Featured task limit reached")) {
+      throw new HttpError(
+        409,
+        `Можно закрепить не более ${MAX_FEATURED} заданий. Сначала снимите закрепление с другого.`
       );
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+    throw e;
   }
-}
+
+  await logAction(request, admin.id, on ? "admin_feature_task" : "admin_unfeature_task", {
+    entity: "Task",
+    entityId: params.id,
+  });
+  return NextResponse.json(updated);
+});

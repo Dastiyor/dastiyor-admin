@@ -1,39 +1,39 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { withAdmin } from "@/lib/api";
+import { listParams, listResponse, searchOr } from "@/lib/listQuery";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10)));
-    const skip = (page - 1) * limit;
-    const action = searchParams.get("action") || undefined;
-    const userId = searchParams.get("userId") || undefined;
+export const GET = withAdmin(async (request) => {
+  const { searchParams } = new URL(request.url);
+  const list = listParams(searchParams, {
+    sortable: {
+      action: (dir) => [{ action: dir }, { createdAt: "desc" }],
+      createdAt: (dir) => ({ createdAt: dir }),
+    },
+    defaultSort: { createdAt: "desc" },
+  });
 
-    const where = {};
-    if (action) where.action = { contains: action, mode: "insensitive" };
-    if (userId) where.userId = userId;
+  const and = [];
+  const action = searchParams.get("action");
+  // scope=admin: everything done through this panel (actions are prefixed admin_).
+  if (searchParams.get("scope") === "admin") and.push({ action: { startsWith: "admin_" } });
+  else if (action) and.push({ action: { equals: action, mode: "insensitive" } });
+  const userId = searchParams.get("userId");
+  if (userId) and.push({ userId });
+  const or = searchOr(searchParams.get("q"), ["action", "entityId", "details", "ipAddress", "user.fullName", "user.email"]);
+  if (or) and.push({ OR: or });
+  const where = and.length ? { AND: and } : {};
 
-    const [logs, total] = await Promise.all([
-      prisma.actionLog.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          user: { select: { id: true, fullName: true, email: true } },
-        },
-      }),
-      prisma.actionLog.count({ where }),
-    ]);
-
-    return NextResponse.json({
-      data: logs,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
-    });
-  } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
-}
+  const [logs, total] = await Promise.all([
+    prisma.actionLog.findMany({
+      where,
+      skip: list.skip,
+      take: list.limit,
+      orderBy: list.orderBy,
+      include: { user: { select: { id: true, fullName: true, email: true } } },
+    }),
+    prisma.actionLog.count({ where }),
+  ]);
+  return listResponse(logs, total, list);
+});

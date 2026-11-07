@@ -1,27 +1,20 @@
 import { prisma } from "@/lib/prisma";
+import { withAdmin, readJson, logAction, HttpError } from "@/lib/api";
 import { NextResponse } from "next/server";
 
-export async function PATCH(request, { params }) {
-  try {
-    const { id } = params;
-    const body = await request.json();
-    const { action } = body;
+export const PATCH = withAdmin(async (request, { params, admin }) => {
+  const { action } = await readJson(request);
+  if (action !== "refund") throw new HttpError(400, "Unknown action");
 
-    if (action === "refund") {
-      const payment = await prisma.payment.findUnique({ where: { id } });
-      if (!payment) return NextResponse.json({ error: "Payment not found" }, { status: 404 });
-      if (payment.status !== "COMPLETED") {
-        return NextResponse.json({ error: "Only COMPLETED payments can be refunded" }, { status: 400 });
-      }
-      const updated = await prisma.payment.update({
-        where: { id },
-        data: { status: "CANCELLED" },
-      });
-      return NextResponse.json(updated);
-    }
+  const payment = await prisma.payment.findUnique({ where: { id: params.id } });
+  if (!payment) throw new HttpError(404, "Payment not found");
+  if (payment.status !== "COMPLETED") throw new HttpError(400, "Only COMPLETED payments can be refunded");
 
-    return NextResponse.json({ error: "Unknown action" }, { status: 400 });
-  } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
-}
+  const updated = await prisma.payment.update({ where: { id: params.id }, data: { status: "CANCELLED" } });
+  await logAction(request, admin.id, "admin_refund_payment", {
+    entity: "Payment",
+    entityId: params.id,
+    details: { userId: payment.userId, amount: payment.amount, currency: payment.currency },
+  });
+  return NextResponse.json(updated);
+});

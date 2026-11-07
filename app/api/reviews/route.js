@@ -1,39 +1,50 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { withAdmin } from "@/lib/api";
+import { listParams, listResponse, searchOr } from "@/lib/listQuery";
 
-export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
-    const skip = (page - 1) * limit;
-    const includeHidden = searchParams.get("includeHidden") === "true";
+export const dynamic = "force-dynamic";
 
-    const where = includeHidden ? {} : { hidden: false };
+export const GET = withAdmin(async (request) => {
+  const { searchParams } = new URL(request.url);
+  const list = listParams(searchParams, {
+    sortable: {
+      rating: (dir) => [{ rating: dir }, { createdAt: "desc" }],
+      hidden: (dir) => [{ hidden: dir }, { createdAt: "desc" }],
+      createdAt: (dir) => ({ createdAt: dir }),
+    },
+    defaultSort: { createdAt: "desc" },
+  });
 
-    const [reviews, total] = await Promise.all([
-      prisma.review.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          reviewer: { select: { id: true, fullName: true, email: true } },
-          reviewed: { select: { id: true, fullName: true, email: true } },
-          task: { select: { id: true, title: true } },
-        },
-      }),
-      prisma.review.count({ where }),
-    ]);
+  const where = {};
+  // ?hidden=true|false filters; without it, hidden reviews show only with includeHidden=true.
+  const hidden = searchParams.get("hidden");
+  if (hidden === "true") where.hidden = true;
+  else if (hidden === "false" || searchParams.get("includeHidden") !== "true") where.hidden = false;
+  const maxRating = parseInt(searchParams.get("maxRating") || "", 10);
+  if (maxRating >= 1 && maxRating <= 5) where.rating = { lte: maxRating };
+  const or = searchOr(searchParams.get("q"), [
+    "comment",
+    "reviewer.fullName",
+    "reviewer.email",
+    "reviewed.fullName",
+    "reviewed.email",
+    "task.title",
+  ]);
+  if (or) where.OR = or;
 
-    return NextResponse.json({
-      data: reviews,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
-    });
-  } catch (e) {
-    return NextResponse.json(
-      { error: e.message },
-      { status: 500 }
-    );
-  }
-}
+  const [reviews, total] = await Promise.all([
+    prisma.review.findMany({
+      where,
+      skip: list.skip,
+      take: list.limit,
+      orderBy: list.orderBy,
+      include: {
+        reviewer: { select: { id: true, fullName: true, email: true } },
+        reviewed: { select: { id: true, fullName: true, email: true } },
+        task: { select: { id: true, title: true } },
+      },
+    }),
+    prisma.review.count({ where }),
+  ]);
+  return listResponse(reviews, total, list);
+});

@@ -1,19 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { withAdmin, readJson, logAction } from "@/lib/api";
 import { NextResponse } from "next/server";
 
-export async function PATCH(request, { params }) {
-  try {
-    const body = await request.json();
-    const { hidden } = body || {};
-
-    const review = await prisma.review.update({
-      where: { id: params.id },
-      data: { hidden: !!hidden },
-    });
-
-    return NextResponse.json(review);
-  } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
-}
-
+export const PATCH = withAdmin(async (request, { params, admin }) => {
+  const hidden = !!(await readJson(request)).hidden;
+  const review = await prisma.review.update({ where: { id: params.id }, data: { hidden } });
+  await logAction(request, admin.id, hidden ? "admin_hide_review" : "admin_unhide_review", {
+    entity: "Review",
+    entityId: params.id,
+  });
+  return NextResponse.json(review);
+});

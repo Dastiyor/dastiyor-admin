@@ -1,113 +1,72 @@
 import { prisma } from "@/lib/prisma";
+import { withAdmin, readJson, logAction } from "@/lib/api";
+import { listParams, listResponse, searchOr, dateRange } from "@/lib/listQuery";
+import { taskData } from "@/lib/tasks";
 import { NextResponse } from "next/server";
 
-export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
-    const skip = (page - 1) * limit;
-    const status = searchParams.get("status") || undefined;
-    const category = searchParams.get("category") || undefined;
-    const urgency = searchParams.get("urgency") || undefined;
-    const q = searchParams.get("q") || undefined;
-    const sort = searchParams.get("sort") || "newest";
-    const from = searchParams.get("from") || undefined;
-    const to = searchParams.get("to") || undefined;
+export const dynamic = "force-dynamic";
 
-    const where = {};
-    if (status) where.status = status;
-    if (category) where.category = category;
-    if (urgency) where.urgency = urgency;
-    if (q) where.OR = [
-      { title: { contains: q, mode: "insensitive" } },
-      { description: { contains: q, mode: "insensitive" } },
-    ];
-    if (from || to) {
-      where.createdAt = {};
-      if (from) where.createdAt.gte = new Date(from);
-      if (to) where.createdAt.lte = new Date(to + "T23:59:59Z");
-    }
+// Legacy ?sort= values, still accepted alongside ?orderBy=&dir=.
+const LEGACY_SORT = {
+  newest: { createdAt: "desc" },
+  oldest: { createdAt: "asc" },
+  "budget-high": [{ budgetAmountNum: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
+  "budget-low": [{ budgetAmountNum: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }],
+};
 
-    let orderBy = { createdAt: "desc" };
-    if (sort === "budget-high") orderBy = [{ budgetAmountNum: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }];
-    else if (sort === "budget-low") orderBy = [{ budgetAmountNum: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }];
-    else if (sort === "oldest") orderBy = { createdAt: "asc" };
+export const GET = withAdmin(async (request) => {
+  const { searchParams } = new URL(request.url);
+  const list = listParams(searchParams, {
+    sortable: {
+      title: (dir) => ({ title: dir }),
+      category: (dir) => [{ category: dir }, { createdAt: "desc" }],
+      budgetAmountNum: (dir) => [{ budgetAmountNum: { sort: dir, nulls: "last" } }, { createdAt: "desc" }],
+      urgency: (dir) => [{ urgency: dir }, { createdAt: "desc" }],
+      status: (dir) => [{ status: dir }, { createdAt: "desc" }],
+      featured: (dir) => [{ featured: dir }, { createdAt: "desc" }],
+      createdAt: (dir) => ({ createdAt: dir }),
+    },
+    defaultSort: LEGACY_SORT[searchParams.get("sort")] || LEGACY_SORT.newest,
+  });
 
-    const [tasks, total] = await Promise.all([
-      prisma.task.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy,
-        include: {
-          user: { select: { id: true, fullName: true, email: true } },
-          _count: { select: { responses: true } },
-        },
-      }),
-      prisma.task.count({ where }),
-    ]);
-
-    return NextResponse.json({
-      data: tasks,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
-    });
-  } catch (e) {
-    return NextResponse.json(
-      { error: e.message },
-      { status: 500 }
-    );
+  const where = {};
+  for (const key of ["status", "category", "urgency", "userId"]) {
+    const v = searchParams.get(key);
+    if (v) where[key] = v;
   }
-}
+  if (searchParams.get("featured") === "true") where.featured = true;
+  const created = dateRange(searchParams.get("from"), searchParams.get("to"));
+  if (created) where.createdAt = created;
+  const or = searchOr(searchParams.get("q"), ["title", "description", "city", "user.fullName", "user.email"]);
+  if (or) where.OR = or;
 
-export async function POST(request) {
-  try {
-    const body = await request.json();
-    const {
-      title,
-      description,
-      category,
-      subcategory,
-      budgetType,
-      budgetAmount,
-      city,
-      address,
-      urgency,
-      dueDate,
-      userId,
-      status,
-    } = body;
-
-    // Basic validation
-    if (!title || !description || !category || !city || !userId) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    const newTask = await prisma.task.create({
-      data: {
-        title,
-        description,
-        category,
-        subcategory: subcategory || null,
-        budgetType: budgetType || "negotiable",
-        budgetAmount: budgetAmount || null,
-        city,
-        address: address || null,
-        urgency: urgency || "normal",
-        dueDate: dueDate ? new Date(dueDate) : null,
-        userId,
-        status: status || "OPEN",
+  const [tasks, total, featuredCount] = await Promise.all([
+    prisma.task.findMany({
+      where,
+      skip: list.skip,
+      take: list.limit,
+      orderBy: list.orderBy,
+      include: {
+        user: { select: { id: true, fullName: true, email: true } },
+        _count: { select: { responses: true } },
       },
-    });
+    }),
+    prisma.task.count({ where }),
+    // Site-wide, not just this page: the cap applies to all tasks.
+    prisma.task.count({ where: { featured: true } }),
+  ]);
+  return listResponse(tasks, total, list, { featuredCount });
+});
 
-    return NextResponse.json(newTask, { status: 201 });
-  } catch (e) {
-    return NextResponse.json(
-      { error: e.message },
-      { status: 500 }
-    );
-  }
-}
+export const POST = withAdmin(async (request, { admin }) => {
+  const data = taskData(await readJson(request));
+  data.status ||= "OPEN";
+  data.urgency ||= "normal";
+  const task = await prisma.task.create({ data });
+  await logAction(request, admin.id, "admin_create_task", {
+    entity: "Task",
+    entityId: task.id,
+    details: { title: task.title, userId: task.userId },
+  });
+  return NextResponse.json(task, { status: 201 });
+});

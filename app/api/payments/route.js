@@ -1,46 +1,39 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { withAdmin } from "@/lib/api";
+import { listParams, listResponse, searchOr, dateRange } from "@/lib/listQuery";
 
-export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10)));
-    const skip = (page - 1) * limit;
-    const userId = searchParams.get("userId") || undefined;
-    const status = searchParams.get("status") || undefined;
-    const type = searchParams.get("type") || undefined;
-    const from = searchParams.get("from") || undefined;
-    const to = searchParams.get("to") || undefined;
+export const dynamic = "force-dynamic";
 
-    const where = {};
-    if (userId) where.userId = userId;
-    if (status) where.status = status;
-    if (type) where.type = type;
-    if (from || to) {
-      where.createdAt = {};
-      if (from) where.createdAt.gte = new Date(from);
-      if (to) where.createdAt.lte = new Date(to + "T23:59:59Z");
-    }
+export const GET = withAdmin(async (request) => {
+  const { searchParams } = new URL(request.url);
+  const list = listParams(searchParams, {
+    sortable: {
+      amount: (dir) => [{ amount: dir }, { createdAt: "desc" }],
+      status: (dir) => [{ status: dir }, { createdAt: "desc" }],
+      createdAt: (dir) => ({ createdAt: dir }),
+    },
+    defaultSort: { createdAt: "desc" },
+  });
 
-    const [payments, total] = await Promise.all([
-      prisma.payment.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          user: { select: { id: true, fullName: true, email: true } },
-        },
-      }),
-      prisma.payment.count({ where }),
-    ]);
-
-    return NextResponse.json({
-      data: payments,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
-    });
-  } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  const where = {};
+  for (const key of ["userId", "status", "type"]) {
+    const v = searchParams.get(key);
+    if (v) where[key] = v;
   }
-}
+  const created = dateRange(searchParams.get("from"), searchParams.get("to"));
+  if (created) where.createdAt = created;
+  const or = searchOr(searchParams.get("q"), ["description", "transactionId", "user.fullName", "user.email"]);
+  if (or) where.OR = or;
+
+  const [payments, total] = await Promise.all([
+    prisma.payment.findMany({
+      where,
+      skip: list.skip,
+      take: list.limit,
+      orderBy: list.orderBy,
+      include: { user: { select: { id: true, fullName: true, email: true } } },
+    }),
+    prisma.payment.count({ where }),
+  ]);
+  return listResponse(payments, total, list);
+});

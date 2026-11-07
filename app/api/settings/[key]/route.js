@@ -1,39 +1,36 @@
 import { prisma } from "@/lib/prisma";
+import { withAdmin, readJson, logAction, HttpError } from "@/lib/api";
 import { NextResponse } from "next/server";
 
 const ALLOWED_KEYS = ["company", "payment", "profile"];
 
-export async function GET(request, { params }) {
-  try {
-    const key = params.key;
-    if (!ALLOWED_KEYS.includes(key)) {
-      return NextResponse.json({ error: "Invalid settings key" }, { status: 400 });
-    }
-    const row = await prisma.systemSetting.findUnique({
-      where: { key },
-    });
-    const value = row ? JSON.parse(row.value || "{}") : {};
-    return NextResponse.json(value);
-  } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
+function checkKey(key) {
+  if (!ALLOWED_KEYS.includes(key)) throw new HttpError(400, "Invalid settings key");
+  return key;
 }
 
-export async function PUT(request, { params }) {
+export const GET = withAdmin(async (request, { params }) => {
+  const key = checkKey(params.key);
+  const row = await prisma.systemSetting.findUnique({ where: { key } });
+  let value = {};
   try {
-    const key = params.key;
-    if (!ALLOWED_KEYS.includes(key)) {
-      return NextResponse.json({ error: "Invalid settings key" }, { status: 400 });
-    }
-    const body = await request.json();
-    const value = JSON.stringify(body);
-    await prisma.systemSetting.upsert({
-      where: { key },
-      create: { key, value },
-      update: { value },
-    });
-    return NextResponse.json({ success: true });
-  } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    value = row ? JSON.parse(row.value || "{}") : {};
+  } catch {
+    console.error(`settings: stored value for "${key}" is not valid JSON`);
   }
-}
+  return NextResponse.json(value);
+});
+
+export const PUT = withAdmin(async (request, { params, admin }) => {
+  const key = checkKey(params.key);
+  const body = await readJson(request);
+  const value = JSON.stringify(body);
+  await prisma.systemSetting.upsert({ where: { key }, create: { key, value }, update: { value } });
+  // Field names only: payment settings hold credentials.
+  await logAction(request, admin.id, "admin_update_settings", {
+    entity: "SystemSetting",
+    entityId: key,
+    details: { fields: Object.keys(body) },
+  });
+  return NextResponse.json({ success: true });
+});

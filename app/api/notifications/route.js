@@ -1,76 +1,72 @@
 import { prisma } from "@/lib/prisma";
+import { withAdmin, readJson, logAction, HttpError } from "@/lib/api";
+import { listParams, listResponse, searchOr } from "@/lib/listQuery";
 import { NextResponse } from "next/server";
 
-export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10)));
-    const skip = (page - 1) * limit;
-    const userId = searchParams.get("userId") || undefined;
-    const unreadOnly = searchParams.get("unread") === "true";
+export const dynamic = "force-dynamic";
 
-    const where = {};
-    if (userId) where.userId = userId;
-    if (unreadOnly) where.isRead = false;
+export const GET = withAdmin(async (request) => {
+  const { searchParams } = new URL(request.url);
+  const list = listParams(searchParams, {
+    sortable: {
+      type: (dir) => [{ type: dir }, { createdAt: "desc" }],
+      isRead: (dir) => [{ isRead: dir }, { createdAt: "desc" }],
+      createdAt: (dir) => ({ createdAt: dir }),
+    },
+    defaultSort: { createdAt: "desc" },
+  });
 
-    const [notifications, total] = await Promise.all([
-      prisma.notification.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          user: { select: { id: true, fullName: true, email: true } },
-        },
-      }),
-      prisma.notification.count({ where }),
-    ]);
+  const where = {};
+  const userId = searchParams.get("userId");
+  if (userId) where.userId = userId;
+  if (searchParams.get("unread") === "true") where.isRead = false;
+  const or = searchOr(searchParams.get("q"), ["title", "message", "user.fullName", "user.email"]);
+  if (or) where.OR = or;
 
-    return NextResponse.json({
-      data: notifications,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
-    });
-  } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  const [notifications, total] = await Promise.all([
+    prisma.notification.findMany({
+      where,
+      skip: list.skip,
+      take: list.limit,
+      orderBy: list.orderBy,
+      include: { user: { select: { id: true, fullName: true, email: true } } },
+    }),
+    prisma.notification.count({ where }),
+  ]);
+  return listResponse(notifications, total, list);
+});
+
+export const POST = withAdmin(async (request, { admin }) => {
+  const { userId, title, message, type = "SYSTEM", link } = await readJson(request);
+  if (!String(title || "").trim() || !String(message || "").trim()) {
+    throw new HttpError(400, "title and message required");
   }
-}
+  const base = {
+    title: String(title).trim(),
+    message: String(message).trim(),
+    type: String(type || "SYSTEM"),
+    link: link ? String(link).trim() : null,
+  };
 
-export async function POST(request) {
-  try {
-    const body = await request.json();
-    const { userId, title, message, type = "SYSTEM", link } = body;
-
-    if (!title?.trim() || !message?.trim()) {
-      return NextResponse.json({ error: "title and message required" }, { status: 400 });
-    }
-
-    if (userId) {
-      const note = await prisma.notification.create({
-        data: { userId, title: title.trim(), message: message.trim(), type, link: link || null },
-      });
-      return NextResponse.json({ sent: 1, notification: note }, { status: 201 });
-    }
-
-    const users = await prisma.user.findMany({
-      where: { role: { not: "ADMIN" } },
-      select: { id: true },
+  if (userId) {
+    const target = await prisma.user.findUnique({ where: { id: String(userId).trim() }, select: { id: true } });
+    if (!target) throw new HttpError(404, "No user with this ID");
+    const note = await prisma.notification.create({ data: { ...base, userId: target.id } });
+    await logAction(request, admin.id, "admin_send_notification", {
+      entity: "Notification",
+      entityId: note.id,
+      details: { userId: target.id, title: base.title },
     });
-
-    if (users.length === 0) return NextResponse.json({ sent: 0 });
-
-    await prisma.notification.createMany({
-      data: users.map((u) => ({
-        userId: u.id,
-        title: title.trim(),
-        message: message.trim(),
-        type,
-        link: link || null,
-      })),
-    });
-
-    return NextResponse.json({ sent: users.length }, { status: 201 });
-  } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ sent: 1, notification: note }, { status: 201 });
   }
-}
+
+  const users = await prisma.user.findMany({ where: { role: { not: "ADMIN" } }, select: { id: true } });
+  if (users.length) {
+    await prisma.notification.createMany({ data: users.map((u) => ({ ...base, userId: u.id })) });
+  }
+  await logAction(request, admin.id, "admin_broadcast_notification", {
+    entity: "Notification",
+    details: { recipients: users.length, title: base.title },
+  });
+  return NextResponse.json({ sent: users.length }, { status: 201 });
+});

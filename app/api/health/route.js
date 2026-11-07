@@ -1,21 +1,16 @@
 import { prisma } from "@/lib/prisma";
+import { isAuthConfigured } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
+// Public, so it reports only yes/no states: no error text, no config values.
 export async function GET() {
-  const hint =
-    "Set .env DATABASE_URL to the same MySQL URL as your Dastiyor website .env (copy from website repo).";
+  const auth = isAuthConfigured() ? "configured" : "missing JWT_SECRET";
   try {
-    if (!process.env.DATABASE_URL) {
-      return Response.json(
-        { ok: false, error: "DATABASE_URL is not set", database: "disconnected", hint },
-        { status: 500 }
-      );
-    }
-    await prisma.$connect();
-    return Response.json({ ok: true, database: "connected" });
+    await prisma.$queryRaw`SELECT 1`;
+    return Response.json({ ok: auth === "configured", database: "connected", auth });
   } catch (e) {
-    return Response.json(
-      { ok: false, error: e.message, database: "disconnected", hint },
-      { status: 500 }
-    );
+    console.error("health check: database unreachable", e);
+    return Response.json({ ok: false, database: "disconnected", auth }, { status: 500 });
   }
 }

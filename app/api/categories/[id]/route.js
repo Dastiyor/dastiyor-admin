@@ -1,73 +1,49 @@
 import { prisma } from "@/lib/prisma";
+import { withAdmin, readJson, logAction, HttpError } from "@/lib/api";
+import { normalizeSlug, normalizeSubcategories } from "@/lib/categories";
 import { NextResponse } from "next/server";
 
-export async function GET(request, { params }) {
-  try {
-    const category = await prisma.category.findUnique({
-      where: { id: params.id },
-    });
-    if (!category) {
-      return NextResponse.json({ error: "Category not found" }, { status: 404 });
-    }
-    return NextResponse.json(category);
-  } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
-}
+export const GET = withAdmin(async (request, { params }) => {
+  const category = await prisma.category.findUnique({ where: { id: params.id } });
+  if (!category) throw new HttpError(404, "Category not found");
+  return NextResponse.json(category);
+});
 
-export async function PUT(request, { params }) {
-  try {
-    const body = await request.json();
-    const { name, slug, order, subcategories } = body;
-    const existing = await prisma.category.findUnique({
-      where: { id: params.id },
-    });
-    if (!existing) {
-      return NextResponse.json({ error: "Category not found" }, { status: 404 });
-    }
-    const data = {};
-    if (name !== undefined) data.name = String(name).trim();
-    if (slug !== undefined) {
-      const slugNorm = String(slug).trim().toLowerCase().replace(/\s+/g, "-");
-      const duplicate = await prisma.category.findFirst({
-        where: { slug: slugNorm, id: { not: params.id } },
-      });
-      if (duplicate) {
-        return NextResponse.json(
-          { error: "Another category with this slug exists" },
-          { status: 409 }
-        );
-      }
-      data.slug = slugNorm;
-    }
-    if (order !== undefined) data.order = parseInt(order, 10) || 0;
-    if (subcategories !== undefined) {
-      data.subcategories = Array.isArray(subcategories)
-        ? JSON.stringify(subcategories)
-        : typeof subcategories === "string"
-          ? JSON.stringify(
-              subcategories.split(",").map((s) => s.trim()).filter(Boolean)
-            )
-          : null;
-    }
-    const category = await prisma.category.update({
-      where: { id: params.id },
-      data,
-    });
-    return NextResponse.json(category);
-  } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
-}
+export const PUT = withAdmin(async (request, { params, admin }) => {
+  const { name, slug, order, subcategories } = await readJson(request);
+  const existing = await prisma.category.findUnique({ where: { id: params.id } });
+  if (!existing) throw new HttpError(404, "Category not found");
 
-export async function DELETE(request, { params }) {
-  try {
-    await prisma.category.delete({ where: { id: params.id } });
-    return NextResponse.json({ success: true });
-  } catch (e) {
-    if (e.code === "P2025") {
-      return NextResponse.json({ error: "Category not found" }, { status: 404 });
-    }
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  const data = {};
+  if (name !== undefined) {
+    data.name = String(name).trim();
+    if (!data.name) throw new HttpError(400, "Name is required");
   }
-}
+  if (slug !== undefined) {
+    data.slug = normalizeSlug(slug);
+    const duplicate = await prisma.category.findFirst({ where: { slug: data.slug, id: { not: params.id } } });
+    if (duplicate) throw new HttpError(409, "Another category with this slug exists");
+  }
+  if (order !== undefined) data.order = parseInt(order, 10) || 0;
+  if (subcategories !== undefined) data.subcategories = normalizeSubcategories(subcategories);
+
+  const category = await prisma.category.update({ where: { id: params.id }, data });
+  await logAction(request, admin.id, "admin_update_category", {
+    entity: "Category",
+    entityId: params.id,
+    details: { before: { name: existing.name, slug: existing.slug }, fields: Object.keys(data) },
+  });
+  return NextResponse.json(category);
+});
+
+export const DELETE = withAdmin(async (request, { params, admin }) => {
+  const category = await prisma.category.findUnique({ where: { id: params.id } });
+  if (!category) throw new HttpError(404, "Category not found");
+  await prisma.category.delete({ where: { id: params.id } });
+  await logAction(request, admin.id, "admin_delete_category", {
+    entity: "Category",
+    entityId: params.id,
+    details: { name: category.name, slug: category.slug },
+  });
+  return NextResponse.json({ success: true });
+});

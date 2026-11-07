@@ -1,83 +1,42 @@
 import { prisma } from "@/lib/prisma";
 import { deleteTasksCascade } from "@/lib/cascade";
+import { withAdmin, readJson, logAction, HttpError } from "@/lib/api";
+import { taskData } from "@/lib/tasks";
 import { NextResponse } from "next/server";
 
-export async function GET(request, { params }) {
-    try {
-        const task = await prisma.task.findUnique({
-            where: { id: params.id },
-            include: {
-                user: { select: { id: true, fullName: true, email: true } },
-            },
-        });
+export const GET = withAdmin(async (request, { params }) => {
+  const task = await prisma.task.findUnique({
+    where: { id: params.id },
+    include: { user: { select: { id: true, fullName: true, email: true } } },
+  });
+  if (!task) throw new HttpError(404, "Task not found");
+  return NextResponse.json(task);
+});
 
-        if (!task) {
-            return NextResponse.json({ error: "Task not found" }, { status: 404 });
-        }
-        return NextResponse.json(task);
-    } catch (e) {
-        return NextResponse.json({ error: e.message }, { status: 500 });
-    }
-}
+export const PUT = withAdmin(async (request, { params, admin }) => {
+  const data = taskData(await readJson(request), { partial: true });
+  const before = await prisma.task.findUnique({ where: { id: params.id } });
+  if (!before) throw new HttpError(404, "Task not found");
 
-export async function PUT(request, { params }) {
-    try {
-        const body = await request.json();
-        // Allow updating all fields
-        const {
-            title,
-            description,
-            category,
-            subcategory,
-            budgetType,
-            budgetAmount,
-            city,
-            address,
-            urgency,
-            dueDate,
-            status,
-            userId,
-        } = body;
+  const task = await prisma.task.update({ where: { id: params.id }, data });
 
-        const data = {};
-        if (title !== undefined) data.title = title;
-        if (description !== undefined) data.description = description;
-        if (category !== undefined) data.category = category;
-        if (subcategory !== undefined) data.subcategory = subcategory || null;
-        if (budgetType !== undefined) data.budgetType = budgetType;
-        if (budgetAmount !== undefined) data.budgetAmount = budgetAmount || null;
-        if (city !== undefined) data.city = city;
-        if (address !== undefined) data.address = address || null;
-        if (urgency !== undefined) data.urgency = urgency;
-        if (dueDate !== undefined) data.dueDate = dueDate ? new Date(dueDate) : null;
-        if (status !== undefined) data.status = status;
-        if (userId !== undefined && userId) data.userId = userId;
+  const changes = {};
+  for (const [k, v] of Object.entries(data)) {
+    const old = before[k] instanceof Date ? before[k].toISOString() : before[k];
+    const now = v instanceof Date ? v.toISOString() : v;
+    if (old !== now && k !== "description") changes[k] = { from: old, to: now };
+  }
+  if (data.description !== undefined && data.description !== before.description) changes.description = "changed";
+  if (Object.keys(changes).length) {
+    await logAction(request, admin.id, "admin_update_task", { entity: "Task", entityId: params.id, details: changes });
+  }
+  return NextResponse.json(task);
+});
 
-        const updatedTask = await prisma.task.update({
-            where: { id: params.id },
-            data,
-        });
-
-        return NextResponse.json(updatedTask);
-    } catch (e) {
-        return NextResponse.json({ error: e.message }, { status: 500 });
-    }
-}
-
-export async function DELETE(request, { params }) {
-    try {
-        const deleted = await prisma.$transaction(
-            (tx) => deleteTasksCascade(tx, { id: params.id }),
-            { timeout: 20000 }
-        );
-        if (!deleted) {
-            return NextResponse.json({ error: "Task not found" }, { status: 404 });
-        }
-        prisma.actionLog.create({
-            data: { action: "admin_delete_task", entity: "Task", entityId: params.id },
-        }).catch(() => {});
-        return NextResponse.json({ success: true });
-    } catch (e) {
-        return NextResponse.json({ error: e.message }, { status: 500 });
-    }
-}
+export const DELETE = withAdmin(async (request, { params, admin }) => {
+  const task = await prisma.task.findUnique({ where: { id: params.id }, select: { title: true, userId: true } });
+  if (!task) throw new HttpError(404, "Task not found");
+  await prisma.$transaction((tx) => deleteTasksCascade(tx, { id: params.id }), { timeout: 20000 });
+  await logAction(request, admin.id, "admin_delete_task", { entity: "Task", entityId: params.id, details: task });
+  return NextResponse.json({ success: true });
+});
