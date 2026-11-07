@@ -91,7 +91,9 @@
     "open": "Кушода",
     "noRecentUsers": "Корбари нав нест.",
     "unnamed": "Бе ном",
-    "joined": "Ба қайд гирифта шуд: {date}"
+    "joined": "Ба қайд гирифта шуд: {date}",
+    "noRecentTasks": "Супоришҳои нав нестанд.",
+    "by": "аз"
   },
   "settings": {
     "changeSettings": "Тағйири танзимот",

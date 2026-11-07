@@ -1,12 +1,15 @@
+"use client";
 import React from "react";
 import Link from "next/link";
-import Icon from "@/components/ui/Icon";
+import { useTranslation } from "@/context/LanguageContext";
+import { TaskStatus } from "@/components/partials/admin/Detail";
 
 const RecentTasks = ({ tasks = [] }) => {
+    const { t } = useTranslation();
     if (!tasks.length) {
         return (
             <div className="text-center py-4 text-slate-500">
-                No recent tasks found.
+                {t("dashboard.noRecentTasks")}
             </div>
         );
     }
@@ -27,22 +30,17 @@ const RecentTasks = ({ tasks = [] }) => {
                             )}
                         </div>
                     </div>
-                    <div className="flex-1">
+                    {/* min-w-0 lets long titles truncate instead of pushing the badge off a phone screen */}
+                    <div className="flex-1 min-w-0 mr-3">
                         <Link href={`/admin/tasks/${task.id}`} className="text-slate-800 dark:text-slate-300 font-medium hover:text-primary-500 text-sm block mb-1 truncate">
                             {task.title}
                         </Link>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                            by <span className="font-medium text-slate-700 dark:text-slate-300">{task.user?.fullName}</span>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                            {t("dashboard.by")} <span className="font-medium text-slate-700 dark:text-slate-300">{task.user?.fullName}</span>
                         </div>
                     </div>
                     <div className="flex-none text-right">
-                        <span className={`badge ${task.status === "COMPLETED" ? "bg-success-500/10 text-success-500" :
-                                task.status === "IN_PROGRESS" ? "bg-warning-500/10 text-warning-500" :
-                                    task.status === "CANCELLED" ? "bg-danger-500/10 text-danger-500" :
-                                        "bg-primary-500/10 text-primary-500"
-                            } text-xs px-2 py-1 rounded-full`}>
-                            {task.status}
-                        </span>
+                        <TaskStatus status={task.status} />
                         <div className="text-xs text-slate-400 mt-1">
                             {new Date(task.createdAt).toLocaleDateString()}
                         </div>

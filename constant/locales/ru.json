@@ -91,7 +91,9 @@
     "open": "Открыто",
     "noRecentUsers": "Новых пользователей нет.",
     "unnamed": "Без имени",
-    "joined": "Регистрация: {date}"
+    "joined": "Регистрация: {date}",
+    "noRecentTasks": "Новых заданий нет.",
+    "by": "от"
   },
   "settings": {
     "changeSettings": "Изменить настройки",
