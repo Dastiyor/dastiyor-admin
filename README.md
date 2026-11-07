@@ -1,52 +1,55 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Dastiyor admin panel
 
-## Getting Started
+Internal admin for the Dastiyor service marketplace: users, tasks, responses, complaints, reviews, subscriptions and payments, sourcing requests, notifications and an audit log of every admin action.
 
-First, run the development server:
+- **Production:** https://admin.dastiyor.com (Vercel, deploys on every push to `main`)
+- **Stack:** Next.js 14 (app router), Prisma 5, Postgres, Tailwind
+- **Languages:** Russian and Tajik (`constant/locales/ru.json`, `tg.json`)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
+## The database is shared
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This panel reads and writes the same Postgres database as the Dastiyor web app and mobile API. **The web app owns the schema.** `prisma/schema.prisma` here mirrors it.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+- Never run `prisma db push` or `prisma migrate` against production from this repo. An outdated copy of the schema would drop the web app's columns.
+- When the web app changes the schema, copy the change into `prisma/schema.prisma` and run `npx prisma generate`.
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
+## Environment
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+See `.env.example`. On Vercel:
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+| Variable | Purpose |
+|---|---|
+| `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING` | Database (from the Vercel Postgres integration) |
+| `JWT_SECRET` | Signs admin login cookies. **Required**, 32+ random characters; without it, logins are refused. Marked Sensitive, so `vercel env pull` leaves it out. Changing it signs every admin out. |
+| `BLOB_READ_WRITE_TOKEN` | Avatar uploads (Vercel Blob) |
+| `BREVO_API_KEY`, `BREVO_FROM_EMAIL` | Emails sent from sourcing requests |
 
-## Learn More
+`GET /api/health` reports whether the database is reachable and whether `JWT_SECRET` is configured.
 
-To learn more about Next.js, take a look at the following resources:
+## Admin accounts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
-
-### Admin login on production (Vercel)
-
-The app needs an admin user in the database. If you get "Invalid email or password" on [https://dastiyor-admin.vercel.app/login](https://dastiyor-admin.vercel.app/login):
-
-1. In Vercel: Project → Settings → Environment Variables. Copy your **production** `DATABASE_URL`.
-2. Ensure the production DB schema is applied (Vercel runs `prisma generate` on build; run migrations or `prisma db push` once against production if needed).
-3. From your machine, create the admin user against the production DB:
+The panel cannot create admins. Create or reset one from your machine:
 
 ```bash
-DATABASE_URL="postgresql://user:pass@host:5432/dbname" node scripts/create-admin.js
+POSTGRES_URL_NON_POOLING="postgresql://…" ADMIN_PASSWORD="a-new-password-of-12+-chars" \
+  node scripts/create-admin.js admin@example.com
 ```
 
-4. Log in with **admin@dastiyor.com** / **admin123**.
+This also unlocks an account that was locked after 5 wrong passwords (otherwise it unlocks itself after 15 minutes).
+
+## Developing
+
+```bash
+npm install
+npm run dev                      # http://localhost:3000
+node scripts/check-i18n.js       # every t("key") exists in ru and tg
+npx prisma generate && npx next build
+```
+
+In local development a built-in key is used if `JWT_SECRET` is unset.
+
+### Conventions
+
+- **API routes** wrap their handler in `withAdmin` (`lib/api.js`). It checks the admin against the database and turns thrown `HttpError`s into JSON. Every change calls `logAction(...)` so it shows up in the audit log with the acting admin.
+- **List endpoints** use `lib/listQuery.js`: `?page`, `limit` (max 100), `q`, `orderBy` and `dir`, with sorting limited to an allowed list of fields.
+- **List pages** use `hooks/useServerTable.js` with `DataTable` and `TablePagination`. Don't fetch a large `limit` and filter in the browser: the API caps the page size, so rows would silently go missing.
