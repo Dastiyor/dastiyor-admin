@@ -9,6 +9,7 @@ import TablePagination from "@/components/partials/table/TablePagination";
 import useServerTable from "@/hooks/useServerTable";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useTranslation } from "@/context/LanguageContext";
+import { dateLocale } from "@/components/partials/admin/Detail";
 
 const ACTION_KEYS = {
   LOGIN: "audit.actionLogin",
@@ -103,7 +104,7 @@ export default function AdminAuditLog() {
       Cell: (row) => (
         <span className="text-xs text-slate-500 whitespace-nowrap">
           {row?.cell?.value
-            ? new Date(row.cell.value).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })
+            ? new Date(row.cell.value).toLocaleString(dateLocale(locale), { dateStyle: "short", timeStyle: "short" })
             : "—"}
         </span>
       ),

@@ -18,6 +18,7 @@ import { toast } from "react-toastify";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useTranslation } from "@/context/LanguageContext";
 import { UserLink, TaskLink } from "@/components/partials/admin/Links";
+import { dateLocale } from "@/components/partials/admin/Detail";
 
 export default function AdminSubscriptions() {
   const { t, locale } = useTranslation();
@@ -139,7 +140,7 @@ export default function AdminSubscriptions() {
       Cell: (row) => (
         <span className="text-sm text-slate-600 dark:text-slate-300">
           {row?.cell?.value
-            ? new Date(row.cell.value).toLocaleDateString(undefined, { dateStyle: "medium" })
+            ? new Date(row.cell.value).toLocaleDateString(dateLocale(locale), { dateStyle: "medium" })
             : "—"}
         </span>
       ),
@@ -150,7 +151,7 @@ export default function AdminSubscriptions() {
       Cell: (row) => (
         <span className="text-sm text-slate-600 dark:text-slate-300">
           {row?.cell?.value
-            ? new Date(row.cell.value).toLocaleDateString(undefined, { dateStyle: "medium" })
+            ? new Date(row.cell.value).toLocaleDateString(dateLocale(locale), { dateStyle: "medium" })
             : "—"}
         </span>
       ),
@@ -353,7 +354,7 @@ export default function AdminSubscriptions() {
                       </span>
                     </td>
                     <td className="table-td text-sm text-slate-500">
-                      {p.createdAt ? new Date(p.createdAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }) : "—"}
+                      {p.createdAt ? new Date(p.createdAt).toLocaleString(dateLocale(locale), { dateStyle: "short", timeStyle: "short" }) : "—"}
                     </td>
                     <td className="table-td">
                       {p.status === "COMPLETED" && (

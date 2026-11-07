@@ -11,6 +11,7 @@ import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useTranslation } from "@/context/LanguageContext";
 import { useUrlFilter, UrlFilterChip } from "@/components/partials/admin/UrlFilter";
 import { UserLink, TaskLink } from "@/components/partials/admin/Links";
+import { dateLocale, fmtNum } from "@/components/partials/admin/Detail";
 
 export default function AdminResponses() {
   const { t, locale } = useTranslation();
@@ -58,7 +59,7 @@ export default function AdminResponses() {
         const str = row?.row?.original?.price;
         return (
           <span className="text-sm font-medium text-slate-900 dark:text-white">
-            {num != null ? `${num.toLocaleString()} TJS` : str ?? "—"}
+            {num != null ? `${fmtNum(num, locale)} TJS` : str ?? "—"}
           </span>
         );
       },
@@ -103,7 +104,7 @@ export default function AdminResponses() {
       Cell: (row) => (
         <span className="text-sm text-slate-500">
           {row?.cell?.value
-            ? new Date(row.cell.value).toLocaleString(undefined, {
+            ? new Date(row.cell.value).toLocaleString(dateLocale(locale), {
                 dateStyle: "short",
                 timeStyle: "short",
               })

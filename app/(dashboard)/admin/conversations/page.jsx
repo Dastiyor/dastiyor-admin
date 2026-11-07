@@ -11,6 +11,7 @@ import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useTranslation } from "@/context/LanguageContext";
 import { useUrlFilter, UrlFilterChip } from "@/components/partials/admin/UrlFilter";
 import { UserLink, TaskLink } from "@/components/partials/admin/Links";
+import { dateLocale } from "@/components/partials/admin/Detail";
 
 export default function AdminConversations() {
   const { t, locale } = useTranslation();
@@ -90,7 +91,7 @@ export default function AdminConversations() {
       Cell: (row) => (
         <span className="text-xs text-slate-500 whitespace-nowrap">
           {row?.cell?.value
-            ? new Date(row.cell.value).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })
+            ? new Date(row.cell.value).toLocaleString(dateLocale(locale), { dateStyle: "short", timeStyle: "short" })
             : "—"}
         </span>
       ),

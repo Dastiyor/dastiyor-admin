@@ -23,6 +23,7 @@ import { bulkDelete } from "@/lib/bulkDelete";
 import { useTranslation } from "@/context/LanguageContext";
 import { toast } from "react-toastify";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { fmtNum } from "@/components/partials/admin/Detail";
 
 const MAX_FEATURED = 3;
 
@@ -198,7 +199,7 @@ export default function AdminTasks() {
         if (type === "negotiable") return <span className="text-xs text-slate-400">{t("tasks.budgetType.negotiable")}</span>;
         return (
           <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            {num != null ? `${num.toLocaleString()} TJS` : str ?? "—"}
+            {num != null ? `${fmtNum(num, locale)} TJS` : str ?? "—"}
           </span>
         );
       },

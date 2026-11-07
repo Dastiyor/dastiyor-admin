@@ -1,31 +1,34 @@
 import React from "react";
 import Icon from "@/components/ui/Icon";
+import { useTranslation } from "@/context/LanguageContext";
+import { fmtNum } from "@/components/partials/admin/Detail";
 
 const GroupChart4 = ({ stats }) => {
+  const { t, locale } = useTranslation();
   const statistics = [
     {
-      title: "Total Tasks",
+      title: t("dashboard.totalTasks"),
       count: stats?.tasks || 0,
       bg: "bg-info-500",
       text: "text-info-500",
       icon: "heroicons-outline:menu-alt-1",
     },
     {
-      title: "Total Users",
+      title: t("dashboard.totalUsers"),
       count: stats?.users || 0,
       bg: "bg-warning-500",
       text: "text-warning-500",
       icon: "heroicons-outline:users",
     },
     {
-      title: "Total Reviews",
+      title: t("dashboard.totalReviews"),
       count: stats?.reviews || 0,
       bg: "bg-primary-500",
       text: "text-primary-500",
       icon: "heroicons-outline:star",
     },
     {
-      title: "Active Subs",
+      title: t("dashboard.activeSubs"),
       count: stats?.subscriptionsActive || 0,
       bg: "bg-success-500",
       text: "text-success-500",
@@ -49,7 +52,7 @@ const GroupChart4 = ({ stats }) => {
             {item.title}
           </span>
           <span className="block mb- text-2xl text-slate-900 dark:text-white font-medium">
-            {item.count}
+            {fmtNum(item.count, locale)}
           </span>
         </div>
       ))}

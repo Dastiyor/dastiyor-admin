@@ -21,7 +21,7 @@ import { bulkDelete } from "@/lib/bulkDelete";
 import { useTranslation } from "@/context/LanguageContext";
 import { toast } from "react-toastify";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
-import { ROLE_KEYS, RoleBadge } from "@/components/partials/admin/Detail";
+import { ROLE_KEYS, RoleBadge, fmtNum } from "@/components/partials/admin/Detail";
 
 export default function AdminUsers() {
   const { t, locale } = useTranslation();
@@ -178,7 +178,7 @@ export default function AdminUsers() {
       accessor: "balance",
       Cell: (row) => (
         <span className={`text-sm font-medium ${(row?.cell?.value || 0) > 0 ? "text-success-500" : "text-slate-500"}`}>
-          {(row?.cell?.value || 0).toLocaleString()} TJS
+          {fmtNum(row?.cell?.value, locale)} TJS
         </span>
       ),
     },

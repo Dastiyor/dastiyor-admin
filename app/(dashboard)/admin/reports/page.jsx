@@ -14,6 +14,7 @@ import { useTranslation } from "@/context/LanguageContext";
 import { useUrlFilter, UrlFilterChip } from "@/components/partials/admin/UrlFilter";
 import { toast } from "react-toastify";
 import ReportStatus from "@/components/partials/admin/ReportStatus";
+import { dateLocale } from "@/components/partials/admin/Detail";
 
 const STATUSES = ["OPEN", "RESOLVED", "DISMISSED"];
 
@@ -99,7 +100,7 @@ export default function AdminReports() {
       accessor: "createdAt",
       Cell: ({ value }) => (
         <span className="text-xs text-slate-500 whitespace-nowrap">
-          {new Date(value).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
+          {new Date(value).toLocaleString(dateLocale(locale), { dateStyle: "short", timeStyle: "short" })}
         </span>
       ),
     },

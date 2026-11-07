@@ -93,7 +93,20 @@
     "unnamed": "Без имени",
     "joined": "Регистрация: {date}",
     "noRecentTasks": "Новых заданий нет.",
-    "by": "от"
+    "by": "от",
+    "loadError": "Не удалось загрузить статистику: {error}",
+    "totalTasks": "Всего задач",
+    "totalUsers": "Всего пользователей",
+    "totalReviews": "Всего отзывов",
+    "activeSubs": "Активные подписки",
+    "totalRevenue": "Общий доход",
+    "paymentSuccess": "Успешные платежи",
+    "paidTransactions": "Оплаченные транзакции",
+    "lockedAccounts": "Заблокированные аккаунты",
+    "tasksCreated": "Создано задач",
+    "usersJoined": "Новые пользователи",
+    "monthlyRevenue": "Доход по месяцам (TJS)",
+    "revenueTjs": "Доход (TJS)"
   },
   "settings": {
     "changeSettings": "Изменить настройки",

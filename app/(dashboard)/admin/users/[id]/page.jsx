@@ -19,6 +19,7 @@ import {
   DetailState,
   fmtDate,
   RoleBadge,
+  fmtNum,
 } from "@/components/partials/admin/Detail";
 
 function parseList(raw) {
@@ -31,7 +32,7 @@ function parseList(raw) {
 }
 
 export default function UserDetail() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const confirm = useConfirm();
   const { id } = useParams();
   const router = useRouter();
@@ -141,8 +142,8 @@ export default function UserDetail() {
                 {user.phone && user.phoneVerified && <Icon icon="heroicons:check-badge" className="inline text-success-500 ltr:ml-1 rtl:mr-1" />}
               </Field>
               <Field label={t("detail.city")}>{user.city}</Field>
-              <Field label={t("users.balanceTjs")}>{(user.balance || 0).toLocaleString()} TJS</Field>
-              <Field label={t("detail.joined")}>{fmtDate(user.createdAt, false)}</Field>
+              <Field label={t("users.balanceTjs")}>{fmtNum(user.balance, locale)} TJS</Field>
+              <Field label={t("detail.joined")}>{fmtDate(user.createdAt, false, locale)}</Field>
               <Field label={t("detail.rating")}>
                 {averageRating != null ? `${averageRating.toFixed(1)} ★ (${c.reviewsReceived})` : "—"}
               </Field>
@@ -192,7 +193,7 @@ export default function UserDetail() {
             <Row key={x.id}>
               <Link href={`/admin/tasks/${x.id}`} className="min-w-0 hover:text-primary-500">
                 <p className="text-sm font-medium truncate">{x.title}</p>
-                <p className="text-xs text-slate-500">{x.category} · {x.city} · {fmtDate(x.createdAt, false)}</p>
+                <p className="text-xs text-slate-500">{x.category} · {x.city} · {fmtDate(x.createdAt, false, locale)}</p>
               </Link>
               <TaskStatus status={x.status} />
             </Row>
@@ -219,7 +220,7 @@ export default function UserDetail() {
               <Row key={r.id}>
                 <Link href={`/admin/tasks/${r.task?.id}`} className="min-w-0 hover:text-primary-500">
                   <p className="text-sm truncate">{r.task?.title}</p>
-                  <p className="text-xs text-slate-500">{r.price} · {fmtDate(r.createdAt, false)}</p>
+                  <p className="text-xs text-slate-500">{r.price} · {fmtDate(r.createdAt, false, locale)}</p>
                 </Link>
                 <span className="text-xs text-slate-500">{t(`responses.status.${String(r.status).toLowerCase()}`)}</span>
               </Row>
@@ -237,7 +238,7 @@ export default function UserDetail() {
                 </p>
                 {r.comment && <p className="text-sm text-slate-600 dark:text-slate-300">{r.comment}</p>}
                 <p className="text-xs text-slate-500 mt-1">
-                  <PersonLink person={r.reviewer} /> · {fmtDate(r.createdAt, false)}
+                  <PersonLink person={r.reviewer} /> · {fmtDate(r.createdAt, false, locale)}
                 </p>
               </div>
             </Row>
@@ -250,7 +251,7 @@ export default function UserDetail() {
               <div>
                 <p className="text-sm font-medium">{sub.plan}</p>
                 <p className="text-xs text-slate-500">
-                  {fmtDate(sub.startDate, false)} – {fmtDate(sub.endDate, false)}
+                  {fmtDate(sub.startDate, false, locale)} – {fmtDate(sub.endDate, false, locale)}
                 </p>
               </div>
               <span className={`badge ${subActive ? "bg-success-500/10 text-success-500" : "bg-slate-500/10 text-slate-500"}`}>
@@ -268,7 +269,7 @@ export default function UserDetail() {
                   {p.amount} {p.currency}
                 </p>
                 <p className="text-xs text-slate-500">
-                  {p.type}{p.plan ? ` (${p.plan})` : ""} · {fmtDate(p.createdAt)}
+                  {p.type}{p.plan ? ` (${p.plan})` : ""} · {fmtDate(p.createdAt, true, locale)}
                 </p>
               </div>
               <span className="text-xs text-slate-500">

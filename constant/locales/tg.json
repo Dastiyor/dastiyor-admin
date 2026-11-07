@@ -93,7 +93,20 @@
     "unnamed": "Бе ном",
     "joined": "Ба қайд гирифта шуд: {date}",
     "noRecentTasks": "Супоришҳои нав нестанд.",
-    "by": "аз"
+    "by": "аз",
+    "loadError": "Боркунии омор муяссар нашуд: {error}",
+    "totalTasks": "Ҳамагӣ супоришҳо",
+    "totalUsers": "Ҳамагӣ корбарон",
+    "totalReviews": "Ҳамагӣ шарҳҳо",
+    "activeSubs": "Обунаҳои фаъол",
+    "totalRevenue": "Даромади умумӣ",
+    "paymentSuccess": "Пардохтҳои муваффақ",
+    "paidTransactions": "Амалиётҳои пардохтшуда",
+    "lockedAccounts": "Ҳисобҳои басташуда",
+    "tasksCreated": "Супоришҳои эҷодшуда",
+    "usersJoined": "Корбарони нав",
+    "monthlyRevenue": "Даромади моҳона (TJS)",
+    "revenueTjs": "Даромад (TJS)"
   },
   "settings": {
     "changeSettings": "Тағйири танзимот",

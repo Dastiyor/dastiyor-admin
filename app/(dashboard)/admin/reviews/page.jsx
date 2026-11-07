@@ -12,6 +12,7 @@ import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useTranslation } from "@/context/LanguageContext";
 import { UserLink, TaskLink } from "@/components/partials/admin/Links";
 import { toast } from "react-toastify";
+import { dateLocale } from "@/components/partials/admin/Detail";
 
 export default function AdminReviews() {
   const { t, locale } = useTranslation();
@@ -104,7 +105,7 @@ export default function AdminReviews() {
       Cell: (row) => (
         <span className="text-sm text-slate-500">
           {row?.cell?.value
-            ? new Date(row.cell.value).toLocaleString(undefined, {
+            ? new Date(row.cell.value).toLocaleString(dateLocale(locale), {
                 dateStyle: "short",
                 timeStyle: "short",
               })

@@ -1,0 +1,23 @@
+{
+  "env": {
+    "OLLAMA_API_KEY": "ollama"
+  },
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen2.5-coder:7b",
+        "name": "Local Qwen Coder",
+        "envKey": "OLLAMA_API_KEY",
+        "baseUrl": "http://localhost:11434/v1",
+        "generationConfig": {
+          "contextWindowSize": 16384,
+          "timeout": 300000,
+          "maxRetries": 1
+        }
+      }
+    ]
+  },
+  "model": {
+    "name": "qwen2.5-coder:7b"
+  }
+}

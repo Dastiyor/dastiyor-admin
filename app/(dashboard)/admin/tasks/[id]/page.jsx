@@ -18,6 +18,7 @@ import {
   ComplaintRows,
   DetailState,
   fmtDate,
+  fmtNum,
 } from "@/components/partials/admin/Detail";
 
 const STATUSES = ["OPEN", "IN_PROGRESS", "COMPLETED", "CANCELLED"];
@@ -32,7 +33,7 @@ function parseImages(raw) {
 }
 
 export default function TaskDetail() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const confirm = useConfirm();
   const { id } = useParams();
   const router = useRouter();
@@ -106,7 +107,7 @@ export default function TaskDetail() {
     task.budgetType === "negotiable"
       ? t("tasks.budgetType.negotiable")
       : task.budgetAmountNum != null
-        ? `${task.budgetAmountNum.toLocaleString()} TJS`
+        ? `${fmtNum(task.budgetAmountNum, locale)} TJS`
         : task.budgetAmount || "—";
 
   return (
@@ -147,8 +148,8 @@ export default function TaskDetail() {
             {task.address ? `, ${task.address}` : ""}
           </Field>
           <Field label={t("tasks.colUrgency")}>{t(`tasks.urgency.${task.urgency || "normal"}`)}</Field>
-          <Field label={t("tasks.fieldDueDate")}>{fmtDate(task.dueDate, false)}</Field>
-          <Field label={t("detail.created")}>{fmtDate(task.createdAt)}</Field>
+          <Field label={t("tasks.fieldDueDate")}>{fmtDate(task.dueDate, false, locale)}</Field>
+          <Field label={t("detail.created")}>{fmtDate(task.createdAt, true, locale)}</Field>
           <Field label={t("detail.messages")}>{task._count.messages}</Field>
           <Field label={t("detail.favorites")}>{task._count.favorites}</Field>
         </div>
@@ -202,7 +203,7 @@ export default function TaskDetail() {
                 <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 whitespace-pre-wrap line-clamp-3">{r.message}</p>
                 <p className="text-xs text-slate-500 mt-1">
                   {r.price}
-                  {r.estimatedTime ? ` · ${r.estimatedTime}` : ""} · {fmtDate(r.createdAt)}
+                  {r.estimatedTime ? ` · ${r.estimatedTime}` : ""} · {fmtDate(r.createdAt, true, locale)}
                 </p>
               </div>
               <span className="text-xs text-slate-500 shrink-0">{t(`responses.status.${String(r.status).toLowerCase()}`)}</span>

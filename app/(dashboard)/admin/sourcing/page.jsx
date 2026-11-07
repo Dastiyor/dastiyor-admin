@@ -6,6 +6,7 @@ import Icon from "@/components/ui/Icon";
 import Button from "@/components/ui/Button";
 import { toast } from "react-toastify";
 import { useTranslation } from "@/context/LanguageContext";
+import { dateLocale } from "@/components/partials/admin/Detail";
 
 const STATUSES = ["NEW", "IN_PROGRESS", "PROPOSED", "CLOSED"];
 const STATUS_CLASS = {
@@ -83,7 +84,7 @@ export default function AdminSourcing() {
     }
   };
 
-  const date = (d) => (d ? new Date(d).toLocaleDateString(locale === "tg" ? "tg-TJ" : "ru-RU") : "—");
+  const date = (d) => (d ? new Date(d).toLocaleDateString(dateLocale(locale)) : "—");
 
   return (
     <div className="space-y-5">

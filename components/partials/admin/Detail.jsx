@@ -17,6 +17,16 @@ export const fmtDate = (v, withTime = true, locale) =>
     ? new Date(v).toLocaleString(dateLocale(locale), withTime ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" })
     : "—";
 
+/** 12345.5 -> "12 345,5" in the app's language. */
+export const fmtNum = (n, locale) => Number(n || 0).toLocaleString(dateLocale(locale));
+
+/** "2026-11" -> "нояб. 26" in the app's language (dashboard chart axis). */
+export const fmtMonth = (key, locale) => {
+  const [y, m] = String(key).split("-").map(Number);
+  if (!y || !m) return key;
+  return new Date(y, m - 1, 1).toLocaleDateString(dateLocale(locale), { month: "short", year: "2-digit" });
+};
+
 /** A label/value row in a detail card. */
 export function Field({ label, children }) {
   return (
@@ -107,7 +117,7 @@ export function PersonLink({ person }) {
 
 /** Complaints with inline resolve / dismiss / reopen. Calls onChange after a status change. */
 export function ComplaintRows({ reports, onChange }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [busy, setBusy] = useState(null);
 
   const setStatus = async (id, status) => {
@@ -134,7 +144,7 @@ export function ComplaintRows({ reports, onChange }) {
       <div className="min-w-0">
         <p className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{r.reason}</p>
         <p className="text-xs text-slate-500 mt-1">
-          {t("reports.reporter")}: <PersonLink person={r.reporter} /> · {fmtDate(r.createdAt)}
+          {t("reports.reporter")}: <PersonLink person={r.reporter} /> · {fmtDate(r.createdAt, true, locale)}
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">

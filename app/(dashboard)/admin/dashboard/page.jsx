@@ -8,12 +8,13 @@ import RecentTasks from "@/components/partials/widget/recent-tasks";
 import RecentUsers from "@/components/partials/widget/recent-users";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import { useTranslation } from "@/context/LanguageContext";
+import { fmtMonth, fmtNum } from "@/components/partials/admin/Detail";
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
 
   useEffect(() => {
     let cancelled = false;
@@ -42,11 +43,11 @@ const AdminDashboard = () => {
   }, []);
 
   if (loading) {
-    return <div className="p-4 text-slate-500">Loading dashboard stats...</div>;
+    return <div className="p-4 text-slate-500">{t("common.loading")}</div>;
   }
 
   if (error) {
-    return <div className="p-4 text-danger-500">Error loading stats: {error}</div>;
+    return <div className="p-4 text-danger-500">{t("dashboard.loadError", { error })}</div>;
   }
 
   if (!stats) return null;
@@ -77,7 +78,7 @@ const AdminDashboard = () => {
                       stats.tasksCompleted || 0,
                       stats.tasksCancelled || 0,
                     ]}
-                    labels={["Open", "In Progress", "Completed", "Cancelled"]}
+                    labels={["open", "in_progress", "completed", "cancelled"].map((s) => t(`tasks.status.${s}`))}
                     chartColors={["#4669FA", "#FA916B", "#50C793", "#F1595C"]}
                   />
                 </div>
@@ -89,16 +90,16 @@ const AdminDashboard = () => {
                 <div className="text-success-500 mx-auto h-10 w-10 flex items-center justify-center rounded-full bg-white text-2xl mb-4">
                   <span className="text-base font-bold">TJS</span>
                 </div>
-                <span className="block text-sm text-slate-600 font-medium dark:text-white mb-1">Total Revenue</span>
+                <span className="block text-sm text-slate-600 font-medium dark:text-white mb-1">{t("dashboard.totalRevenue")}</span>
                 <span className="block text-2xl text-slate-900 dark:text-white font-medium">
-                  {(stats.totalRevenue || 0).toLocaleString()}
+                  {fmtNum(stats.totalRevenue, locale)}
                 </span>
               </div>
               <div className="bg-primary-500 rounded-md p-4 bg-opacity-[0.15] dark:bg-opacity-50 text-center">
                 <div className="text-primary-500 mx-auto h-10 w-10 flex items-center justify-center rounded-full bg-white text-2xl mb-4">
                   <span className="text-base font-bold">%</span>
                 </div>
-                <span className="block text-sm text-slate-600 font-medium dark:text-white mb-1">Payment Success</span>
+                <span className="block text-sm text-slate-600 font-medium dark:text-white mb-1">{t("dashboard.paymentSuccess")}</span>
                 <span className="block text-2xl text-slate-900 dark:text-white font-medium">
                   {stats.paymentSuccessRate || 0}%
                 </span>
@@ -107,18 +108,18 @@ const AdminDashboard = () => {
                 <div className="text-warning-500 mx-auto h-10 w-10 flex items-center justify-center rounded-full bg-white text-2xl mb-4">
                   <span className="text-base font-bold">#</span>
                 </div>
-                <span className="block text-sm text-slate-600 font-medium dark:text-white mb-1">Paid Transactions</span>
+                <span className="block text-sm text-slate-600 font-medium dark:text-white mb-1">{t("dashboard.paidTransactions")}</span>
                 <span className="block text-2xl text-slate-900 dark:text-white font-medium">
-                  {stats.completedPayments || 0}
+                  {fmtNum(stats.completedPayments, locale)}
                 </span>
               </div>
               <div className="bg-danger-500 rounded-md p-4 bg-opacity-[0.15] dark:bg-opacity-50 text-center">
                 <div className="text-danger-500 mx-auto h-10 w-10 flex items-center justify-center rounded-full bg-white text-2xl mb-4">
                   <span className="text-base font-bold">🔒</span>
                 </div>
-                <span className="block text-sm text-slate-600 font-medium dark:text-white mb-1">Locked Accounts</span>
+                <span className="block text-sm text-slate-600 font-medium dark:text-white mb-1">{t("dashboard.lockedAccounts")}</span>
                 <span className="block text-2xl text-slate-900 dark:text-white font-medium">
-                  {stats.lockedUsers || 0}
+                  {fmtNum(stats.lockedUsers, locale)}
                 </span>
               </div>
             </div>
@@ -128,18 +129,18 @@ const AdminDashboard = () => {
             <BasicArea
               height={310}
               series={[
-                { name: "Tasks Created", data: stats.taskActivity?.tasks || [] },
-                { name: "Users Joined", data: stats.taskActivity?.users || [] },
+                { name: t("dashboard.tasksCreated"), data: stats.taskActivity?.tasks || [] },
+                { name: t("dashboard.usersJoined"), data: stats.taskActivity?.users || [] },
               ]}
-              categories={stats.taskActivity?.labels || []}
+              categories={(stats.taskActivity?.labels || []).map((k) => fmtMonth(k, locale))}
             />
           </Card>
 
-          <Card title="Monthly Revenue (TJS)">
+          <Card title={t("dashboard.monthlyRevenue")}>
             <BasicArea
               height={260}
-              series={[{ name: "Revenue (TJS)", data: stats.revenueActivity?.data || [] }]}
-              categories={stats.revenueActivity?.labels || []}
+              series={[{ name: t("dashboard.revenueTjs"), data: stats.revenueActivity?.data || [] }]}
+              categories={(stats.revenueActivity?.labels || []).map((k) => fmtMonth(k, locale))}
             />
           </Card>
         </div>

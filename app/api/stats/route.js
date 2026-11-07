@@ -5,10 +5,6 @@ import { withAdmin } from "@/lib/api";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-function monthLabel(d) {
-  return d.toLocaleDateString(undefined, { month: "short", year: "2-digit" });
-}
-
 export const GET = withAdmin(async () => {
   const now = new Date();
   const start = new Date(now);
@@ -22,7 +18,7 @@ export const GET = withAdmin(async () => {
     const m = new Date(start);
     m.setMonth(start.getMonth() + i);
     const key = `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, "0")}`;
-    buckets.push({ key, label: monthLabel(m), count: 0 });
+    buckets.push({ key, count: 0 });
     bucketMap.set(key, i);
   }
 
@@ -132,12 +128,12 @@ export const GET = withAdmin(async () => {
     completedPayments,
     paymentSuccessRate: totalPayments > 0 ? Math.round((completedPayments / totalPayments) * 100) : 0,
     taskActivity: {
-      labels: buckets.map((b) => b.label),
+      labels: buckets.map((b) => b.key), // "YYYY-MM"; the dashboard formats these in the UI language
       tasks: buckets.map((b) => b.count),
       users: userBuckets.map((b) => b.count),
     },
     revenueActivity: {
-      labels: revBuckets.map((b) => b.label),
+      labels: revBuckets.map((b) => b.key),
       data: revBuckets.map((b) => b.revenue),
     },
     recentTasks,
