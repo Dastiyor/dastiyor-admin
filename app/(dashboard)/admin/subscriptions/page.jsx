@@ -18,7 +18,7 @@ import { toast } from "react-toastify";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useTranslation } from "@/context/LanguageContext";
 import { UserLink, TaskLink } from "@/components/partials/admin/Links";
-import { dateLocale } from "@/components/partials/admin/Detail";
+import { dateLocale, fmtDate } from "@/components/partials/admin/Detail";
 
 export default function AdminSubscriptions() {
   const { t, locale } = useTranslation();
@@ -139,9 +139,7 @@ export default function AdminSubscriptions() {
       accessor: "startDate",
       Cell: (row) => (
         <span className="text-sm text-slate-600 dark:text-slate-300">
-          {row?.cell?.value
-            ? new Date(row.cell.value).toLocaleDateString(dateLocale(locale), { dateStyle: "medium" })
-            : "—"}
+          {fmtDate(row?.cell?.value, false, locale)}
         </span>
       ),
     },
@@ -150,9 +148,7 @@ export default function AdminSubscriptions() {
       accessor: "endDate",
       Cell: (row) => (
         <span className="text-sm text-slate-600 dark:text-slate-300">
-          {row?.cell?.value
-            ? new Date(row.cell.value).toLocaleDateString(dateLocale(locale), { dateStyle: "medium" })
-            : "—"}
+          {fmtDate(row?.cell?.value, false, locale)}
         </span>
       ),
     },

@@ -8,14 +8,27 @@ import { useTranslation } from "@/context/LanguageContext";
 import { toast } from "react-toastify";
 import ReportStatus from "./ReportStatus";
 
-/** Maps the app's language ("ru" / "tg") to a date-formatting locale. */
-export const dateLocale = (locale) => (locale === "tg" ? "tg-TJ" : locale === "ru" ? "ru-RU" : undefined);
+// Chrome ships without Tajik locale data and silently falls back to English,
+// so when it's missing we format like Russian (same number/time conventions)
+// and spell out Tajik month names ourselves.
+const HAS_TG = typeof Intl !== "undefined" && Intl.DateTimeFormat.supportedLocalesOf(["tg-TJ"]).length > 0;
+const TG_MONTHS = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
+const tgFallback = (locale) => locale === "tg" && !HAS_TG;
+
+/** Maps the app's language ("ru" / "tg") to a formatting locale the browser actually supports. */
+export const dateLocale = (locale) =>
+  locale === "tg" ? (HAS_TG ? "tg-TJ" : "ru-RU") : locale === "ru" ? "ru-RU" : undefined;
 
 /** Pass the app's `locale` so dates match the UI language, not the browser's. */
-export const fmtDate = (v, withTime = true, locale) =>
-  v
-    ? new Date(v).toLocaleString(dateLocale(locale), withTime ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" })
-    : "—";
+export const fmtDate = (v, withTime = true, locale) => {
+  if (!v) return "—";
+  const d = new Date(v);
+  if (tgFallback(locale)) {
+    const day = `${String(d.getDate()).padStart(2, "0")} ${TG_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    return withTime ? `${day}, ${d.toLocaleTimeString("ru-RU", { timeStyle: "short" })}` : day;
+  }
+  return d.toLocaleString(dateLocale(locale), withTime ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" });
+};
 
 /** 12345.5 -> "12 345,5" in the app's language. */
 export const fmtNum = (n, locale) => Number(n || 0).toLocaleString(dateLocale(locale));
@@ -24,6 +37,7 @@ export const fmtNum = (n, locale) => Number(n || 0).toLocaleString(dateLocale(lo
 export const fmtMonth = (key, locale) => {
   const [y, m] = String(key).split("-").map(Number);
   if (!y || !m) return key;
+  if (tgFallback(locale)) return `${TG_MONTHS[m - 1]} ${String(y).slice(-2)}`;
   return new Date(y, m - 1, 1).toLocaleDateString(dateLocale(locale), { month: "short", year: "2-digit" });
 };
 
