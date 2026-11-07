@@ -9,15 +9,18 @@ import TablePagination from "@/components/partials/table/TablePagination";
 import useServerTable from "@/hooks/useServerTable";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useTranslation } from "@/context/LanguageContext";
+import { useUrlFilter, UrlFilterChip } from "@/components/partials/admin/UrlFilter";
+import { UserLink, TaskLink } from "@/components/partials/admin/Links";
 
 export default function AdminConversations() {
   const { t, locale } = useTranslation();
   const [userIdFilter, setUserIdFilter] = useState("");
+  const taskIdFilter = useUrlFilter("taskId");
   const [userIdInput, setUserIdInput] = useState("");
 
   const [search, setSearch] = useState("");
   const q = useDebouncedValue(search.trim());
-  const params = useMemo(() => ({ userId: userIdFilter, q }), [userIdFilter, q]);
+  const params = useMemo(() => ({ userId: userIdFilter, taskId: taskIdFilter, q }), [userIdFilter, taskIdFilter, q]);
 
   const COLUMNS = [
     {
@@ -26,11 +29,11 @@ export default function AdminConversations() {
       Cell: (row) => {
         const u = row?.cell?.value;
         return (
-          <div className="flex flex-col">
+          <UserLink id={u?.id} className="flex flex-col">
             <span className="text-sm font-medium text-slate-900 dark:text-white">{u?.fullName ?? "—"}</span>
             <span className="text-xs text-slate-500">{u?.email}</span>
             <span className="text-xs text-slate-400 capitalize">{u?.role && t(`conversations.role.${u.role.toLowerCase()}`)}</span>
-          </div>
+          </UserLink>
         );
       },
     },
@@ -40,11 +43,11 @@ export default function AdminConversations() {
       Cell: (row) => {
         const u = row?.cell?.value;
         return (
-          <div className="flex flex-col">
+          <UserLink id={u?.id} className="flex flex-col">
             <span className="text-sm font-medium text-slate-900 dark:text-white">{u?.fullName ?? "—"}</span>
             <span className="text-xs text-slate-500">{u?.email}</span>
             <span className="text-xs text-slate-400 capitalize">{u?.role && t(`conversations.role.${u.role.toLowerCase()}`)}</span>
-          </div>
+          </UserLink>
         );
       },
     },
@@ -55,10 +58,10 @@ export default function AdminConversations() {
         const task = row?.cell?.value;
         if (!task) return <span className="text-xs text-slate-400">—</span>;
         return (
-          <div className="flex flex-col max-w-[180px]">
+          <TaskLink id={task.id} className="flex flex-col max-w-[180px]">
             <span className="text-sm text-slate-700 dark:text-slate-300 line-clamp-1">{task.title}</span>
             <span className="text-xs text-slate-400">{task.status && t(`conversations.taskStatus.${task.status.toLowerCase()}`)}</span>
-          </div>
+          </TaskLink>
         );
       },
     },
@@ -143,6 +146,7 @@ export default function AdminConversations() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            {taskIdFilter && <UrlFilterChip label={t("detail.filteredByTask")} />}
           </div>
           <span className="text-xs text-slate-400">{t("conversations.messagesLoaded", { count: total })}</span>
         </div>

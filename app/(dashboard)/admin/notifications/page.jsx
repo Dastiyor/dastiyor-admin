@@ -14,6 +14,8 @@ import TablePagination from "@/components/partials/table/TablePagination";
 import useServerTable from "@/hooks/useServerTable";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useTranslation } from "@/context/LanguageContext";
+import { useUrlFilter, UrlFilterChip } from "@/components/partials/admin/UrlFilter";
+import { UserLink, TaskLink } from "@/components/partials/admin/Links";
 import { toast } from "react-toastify";
 
 const TYPE_KEYS = {
@@ -28,7 +30,9 @@ export default function AdminNotifications() {
   const { t, locale } = useTranslation();
   const [unreadOnly, setUnreadOnly] = useState(false);
 
-  const [sendForm, setSendForm] = useState({ title: "", message: "", type: "SYSTEM", link: "", userId: "" });
+  // "Send notification" on a user's page links here with ?userId= to address it to them.
+  const presetUserId = useUrlFilter("userId");
+  const [sendForm, setSendForm] = useState({ title: "", message: "", type: "SYSTEM", link: "", userId: presetUserId });
   const [sending, setSending] = useState(false);
 
   const handleSend = async () => {
@@ -68,12 +72,12 @@ export default function AdminNotifications() {
       Header: t("common.user"),
       accessor: "user",
       Cell: (row) => (
-        <div className="flex flex-col">
+        <UserLink id={row?.cell?.value?.id} className="flex flex-col">
           <span className="text-sm text-slate-600 dark:text-slate-300">
             {row?.cell?.value?.fullName ?? "—"}
           </span>
           <span className="text-xs text-slate-500">{row?.cell?.value?.email}</span>
-        </div>
+        </UserLink>
       ),
     },
     {

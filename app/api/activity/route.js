@@ -15,7 +15,7 @@ export const GET = withAdmin(async (request) => {
   const { searchParams } = new URL(request.url);
   const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "8", 10) || 8));
 
-  const [users, tasks, reviews] = await Promise.all([
+  const [users, tasks, reviews, reports] = await Promise.all([
     prisma.user.findMany({
       take: limit,
       where: { role: { not: "ADMIN" } },
@@ -37,6 +37,17 @@ export const GET = withAdmin(async (request) => {
         reviewed: { select: { fullName: true } },
       },
     }),
+    prisma.report.findMany({
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        reason: true,
+        createdAt: true,
+        targetUser: { select: { fullName: true } },
+        targetTask: { select: { title: true } },
+      },
+    }),
   ]);
 
   const events = [
@@ -46,7 +57,7 @@ export const GET = withAdmin(async (request) => {
       name: u.fullName,
       meta: u.role,
       createdAt: u.createdAt,
-      link: "/admin/users",
+      link: `/admin/users/${u.id}`,
     })),
     ...tasks.map((t) => ({
       id: `task-${t.id}`,
@@ -54,7 +65,7 @@ export const GET = withAdmin(async (request) => {
       name: t.title,
       meta: t.city,
       createdAt: t.createdAt,
-      link: "/admin/tasks",
+      link: `/admin/tasks/${t.id}`,
     })),
     ...reviews.map((r) => ({
       id: `review-${r.id}`,
@@ -63,6 +74,14 @@ export const GET = withAdmin(async (request) => {
       meta: `${r.rating}\u2605`,
       createdAt: r.createdAt,
       link: "/admin/reviews",
+    })),
+    ...reports.map((r) => ({
+      id: `report-${r.id}`,
+      type: "REPORT_FILED",
+      name: r.targetUser?.fullName || r.targetTask?.title || "",
+      meta: r.reason.length > 40 ? `${r.reason.slice(0, 40)}…` : r.reason,
+      createdAt: r.createdAt,
+      link: "/admin/reports",
     })),
   ]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))

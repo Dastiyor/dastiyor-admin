@@ -17,6 +17,7 @@ const EVENT_STYLE = {
   USER_JOINED: { icon: "heroicons-outline:user-plus", key: "activity.userJoined" },
   TASK_CREATED: { icon: "heroicons-outline:clipboard-document-list", key: "activity.taskCreated" },
   REVIEW_POSTED: { icon: "heroicons-outline:star", key: "activity.reviewPosted" },
+  REPORT_FILED: { icon: "heroicons-outline:flag", key: "activity.reportFiled" },
 };
 
 const notifyLabel = (count, onClick) => (

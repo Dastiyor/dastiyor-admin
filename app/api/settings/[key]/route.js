@@ -2,7 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { withAdmin, readJson, logAction, HttpError } from "@/lib/api";
 import { NextResponse } from "next/server";
 
-const ALLOWED_KEYS = ["company", "payment", "profile"];
+// Profile is per admin now (/api/profile), not a shared settings record.
+const ALLOWED_KEYS = ["company", "payment"];
 
 function checkKey(key) {
   if (!ALLOWED_KEYS.includes(key)) throw new HttpError(400, "Invalid settings key");

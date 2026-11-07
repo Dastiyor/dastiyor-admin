@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useUrlFilter, UrlFilterChip } from "@/components/partials/admin/UrlFilter";
 import Card from "@/components/ui/Card";
 import Icon from "@/components/ui/Icon";
 import Modal from "@/components/ui/Modal";
@@ -37,6 +39,7 @@ export default function AdminTasks() {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const q = useDebouncedValue(searchInput.trim());
+  const userIdFilter = useUrlFilter("userId");
   const params = useMemo(
     () => ({
       status: statusFilter,
@@ -46,8 +49,9 @@ export default function AdminTasks() {
       from: dateFrom,
       to: dateTo,
       featured: featuredOnly ? "true" : "",
+      userId: userIdFilter,
     }),
-    [statusFilter, urgencyFilter, sortFilter, q, dateFrom, dateTo, featuredOnly]
+    [statusFilter, urgencyFilter, sortFilter, q, dateFrom, dateTo, featuredOnly, userIdFilter]
   );
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -171,10 +175,10 @@ export default function AdminTasks() {
       Header: t("tasks.colTask"),
       accessor: "title",
       Cell: (row) => (
-        <div className="flex flex-col">
-          <span className="font-medium text-slate-900 dark:text-white capitalize">{row?.cell?.value}</span>
+        <Link href={`/admin/tasks/${row.row.original.id}`} className="flex flex-col group">
+          <span className="font-medium text-slate-900 dark:text-white capitalize group-hover:text-primary-500">{row?.cell?.value}</span>
           <span className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1">{row?.row?.original?.description}</span>
-        </div>
+        </Link>
       ),
     },
     {
@@ -224,10 +228,10 @@ export default function AdminTasks() {
       Header: t("tasks.colAuthor"),
       accessor: "user.fullName",
       Cell: (row) => (
-        <div className="flex flex-col">
-          <span className="text-sm text-slate-600 dark:text-slate-300">{row?.cell?.value || t("tasks.unknownAuthor")}</span>
+        <Link href={`/admin/users/${row?.row?.original?.userId}`} className="flex flex-col group">
+          <span className="text-sm text-slate-600 dark:text-slate-300 group-hover:text-primary-500">{row?.cell?.value || t("tasks.unknownAuthor")}</span>
           <span className="text-xs text-slate-500">{row?.row?.original?.user?.email}</span>
-        </div>
+        </Link>
       ),
     },
     {
@@ -340,6 +344,7 @@ export default function AdminTasks() {
             <span className="text-xs text-slate-400">
               {t("tasks.featuredCount", { count: featuredCount, max: MAX_FEATURED })}
             </span>
+            {userIdFilter && <UrlFilterChip label={t("detail.filteredByUser")} />}
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex gap-2">

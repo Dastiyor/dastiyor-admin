@@ -10,16 +10,13 @@ import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
 import { setAuth } from "@/components/partials/auth/store";
 
+// The signed-in admin's own account (User row), saved through /api/profile.
 const defaultProfile = {
   fullName: "",
   email: "",
   phone: "",
   bio: "",
-  addressLine1: "",
-  addressLine2: "",
   city: "",
-  state: "",
-  zip: "",
 };
 
 const FALLBACK_AVATAR = "/assets/images/all-img/user.png";
@@ -62,10 +59,14 @@ const ProfileSettings = () => {
     let cancelled = false;
     async function load() {
       try {
-        const res = await fetch("/api/settings/profile", { credentials: "include" });
+        const res = await fetch("/api/profile", { credentials: "include" });
         if (res.ok) {
           const json = await res.json();
-          if (!cancelled) setData({ ...defaultProfile, ...json });
+          if (!cancelled) {
+            const picked = {};
+            for (const k of Object.keys(defaultProfile)) picked[k] = json[k] ?? "";
+            setData(picked);
+          }
         }
       } catch {
         // keep defaults
@@ -80,14 +81,17 @@ const ProfileSettings = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch("/api/settings/profile", {
+      const res = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error(await res.text());
-      toast.success(t("settings.profile.updateProfile") || "Saved");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || res.statusText);
+      // Header shows name and email from the auth store.
+      dispatch(setAuth({ user: { ...user, fullName: json.fullName, email: json.email } }));
+      toast.success(t("settings.profile.saved"));
     } catch (e) {
       toast.error(e.message);
     } finally {
@@ -115,22 +119,13 @@ const ProfileSettings = () => {
           </div>
           <div className="flex-1 space-y-4">
             <div className="grid lg:grid-cols-2 grid-cols-1 gap-5">
-              <Textinput label={t("settings.profile.fullName")} type="text" placeholder="John Doe" value={data.fullName} onChange={(e) => setData({ ...data, fullName: e.target.value })} />
-              <Textinput label={t("settings.profile.email")} type="email" placeholder="john.doe@example.com" value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} />
-              <Textinput label={t("settings.profile.phone")} type="text" placeholder="+1 234 567 890" value={data.phone} onChange={(e) => setData({ ...data, phone: e.target.value })} />
+              <Textinput label={t("settings.profile.fullName")} type="text" placeholder="" value={data.fullName} onChange={(e) => setData({ ...data, fullName: e.target.value })} />
+              <Textinput label={t("settings.profile.email")} type="email" placeholder="admin@dastiyor.com" value={data.email} onChange={(e) => setData({ ...data, email: e.target.value })} />
+              <Textinput label={t("settings.profile.phone")} type="text" placeholder="+992 90 000 0000" value={data.phone} onChange={(e) => setData({ ...data, phone: e.target.value })} />
+              <Textinput label={t("settings.profile.city")} type="text" placeholder="Душанбе" value={data.city} onChange={(e) => setData({ ...data, city: e.target.value })} />
             </div>
             <Textarea label={t("settings.profile.bio")} placeholder={t("settings.profile.bio")} value={data.bio} onChange={(e) => setData({ ...data, bio: e.target.value })} />
           </div>
-        </div>
-      </Card>
-
-      <Card title={t("settings.profile.address")}>
-        <div className="grid lg:grid-cols-2 grid-cols-1 gap-5">
-          <Textinput label={t("settings.profile.addressLine1")} type="text" placeholder="123 Main St" value={data.addressLine1} onChange={(e) => setData({ ...data, addressLine1: e.target.value })} />
-          <Textinput label={t("settings.profile.addressLine2")} type="text" placeholder="Apt 4B" value={data.addressLine2} onChange={(e) => setData({ ...data, addressLine2: e.target.value })} />
-          <Textinput label={t("settings.profile.city")} type="text" placeholder="New York" value={data.city} onChange={(e) => setData({ ...data, city: e.target.value })} />
-          <Textinput label={t("settings.profile.state")} type="text" placeholder="NY" value={data.state} onChange={(e) => setData({ ...data, state: e.target.value })} />
-          <Textinput label={t("settings.profile.zip")} type="text" placeholder="10001" value={data.zip} onChange={(e) => setData({ ...data, zip: e.target.value })} />
         </div>
       </Card>
 

@@ -4,10 +4,20 @@ import { withAdmin, readJson, logAction, HttpError } from "@/lib/api";
 import { taskData } from "@/lib/tasks";
 import { NextResponse } from "next/server";
 
+const person = { select: { id: true, fullName: true, email: true } };
+
+/** The task with everything the detail page shows: author, assignee, offers, review, complaints. */
 export const GET = withAdmin(async (request, { params }) => {
   const task = await prisma.task.findUnique({
     where: { id: params.id },
-    include: { user: { select: { id: true, fullName: true, email: true } } },
+    include: {
+      user: person,
+      assignedUser: person,
+      responses: { orderBy: { createdAt: "desc" }, include: { user: person } },
+      review: { include: { reviewer: person, reviewed: person } },
+      reports: { orderBy: { createdAt: "desc" }, include: { reporter: person } },
+      _count: { select: { messages: true, favorites: true } },
+    },
   });
   if (!task) throw new HttpError(404, "Task not found");
   return NextResponse.json(task);

@@ -32,7 +32,7 @@ const RecentUsers = ({ users = [] }) => {
                         </div>
                     </div>
                     <div className="flex-1">
-                        <Link href={`/admin/users`} className="text-slate-800 dark:text-slate-300 font-medium hover:text-primary-500 text-sm block mb-1">
+                        <Link href={`/admin/users/${user.id}`} className="text-slate-800 dark:text-slate-300 font-medium hover:text-primary-500 text-sm block mb-1">
                             {user.fullName || t("dashboard.unnamed")}
                         </Link>
                         <div className="text-xs text-slate-500 dark:text-slate-400 truncate">

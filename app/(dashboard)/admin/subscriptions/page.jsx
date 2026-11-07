@@ -16,6 +16,7 @@ import { exportCsv } from "@/lib/exportCsv";
 import { fetchAllRows } from "@/lib/listClient";
 import { toast } from "react-toastify";
 import { useTranslation } from "@/context/LanguageContext";
+import { UserLink, TaskLink } from "@/components/partials/admin/Links";
 
 export default function AdminSubscriptions() {
   const { t, locale } = useTranslation();
@@ -113,12 +114,12 @@ export default function AdminSubscriptions() {
       Header: t("common.user"),
       accessor: "user",
       Cell: (row) => (
-        <div className="flex flex-col">
+        <UserLink id={row?.cell?.value?.id} className="flex flex-col">
           <span className="text-sm font-medium text-slate-900 dark:text-white">
             {row?.cell?.value?.fullName ?? "—"}
           </span>
           <span className="text-xs text-slate-500">{row?.cell?.value?.email}</span>
-        </div>
+        </UserLink>
       ),
     },
     {
@@ -361,7 +362,7 @@ export default function AdminSubscriptions() {
                             onClick={() => handleRefund(p.id)}
                             disabled={refundBusy === p.id}
                           >
-                            <Icon icon="heroicons-outline:arrow-uturn-left" />
+                            <Icon icon="heroicons-outline:x-circle" />
                           </button>
                         </Tooltip>
                       )}

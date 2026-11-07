@@ -9,6 +9,8 @@ import TablePagination from "@/components/partials/table/TablePagination";
 import useServerTable from "@/hooks/useServerTable";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useTranslation } from "@/context/LanguageContext";
+import { useUrlFilter, UrlFilterChip } from "@/components/partials/admin/UrlFilter";
+import { UserLink, TaskLink } from "@/components/partials/admin/Links";
 
 export default function AdminResponses() {
   const { t, locale } = useTranslation();
@@ -16,14 +18,15 @@ export default function AdminResponses() {
 
   const [search, setSearch] = useState("");
   const q = useDebouncedValue(search.trim());
-  const params = useMemo(() => ({ status: statusFilter, q }), [statusFilter, q]);
+  const userIdFilter = useUrlFilter("userId");
+  const params = useMemo(() => ({ status: statusFilter, q, userId: userIdFilter }), [statusFilter, q, userIdFilter]);
 
   const COLUMNS = [
     {
       Header: t("responses.task"),
       accessor: "task",
       Cell: (row) => (
-        <div className="flex flex-col max-w-[200px]">
+        <TaskLink id={row?.cell?.value?.id} className="flex flex-col max-w-[200px]">
           <span className="text-sm font-medium text-slate-900 dark:text-white line-clamp-2">
             {row?.cell?.value?.title ?? "—"}
           </span>
@@ -32,19 +35,19 @@ export default function AdminResponses() {
               ? t(`responses.taskStatus.${row.cell.value.status.toLowerCase()}`)
               : ""}
           </span>
-        </div>
+        </TaskLink>
       ),
     },
     {
       Header: t("responses.provider"),
       accessor: "user",
       Cell: (row) => (
-        <div className="flex flex-col">
+        <UserLink id={row?.cell?.value?.id} className="flex flex-col">
           <span className="text-sm text-slate-600 dark:text-slate-300">
             {row?.cell?.value?.fullName ?? "—"}
           </span>
           <span className="text-xs text-slate-500">{row?.cell?.value?.email}</span>
-        </div>
+        </UserLink>
       ),
     },
     {
@@ -145,6 +148,7 @@ export default function AdminResponses() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            {userIdFilter && <UrlFilterChip label={t("detail.filteredByUser")} />}
           </div>
         </div>
         {error && (

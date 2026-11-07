@@ -10,6 +10,7 @@ import TablePagination from "@/components/partials/table/TablePagination";
 import useServerTable from "@/hooks/useServerTable";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useTranslation } from "@/context/LanguageContext";
+import { UserLink, TaskLink } from "@/components/partials/admin/Links";
 import { toast } from "react-toastify";
 
 export default function AdminReviews() {
@@ -47,33 +48,35 @@ export default function AdminReviews() {
       Header: t("reviews.from"),
       accessor: "reviewer",
       Cell: (row) => (
-        <div className="flex flex-col">
+        <UserLink id={row?.cell?.value?.id} className="flex flex-col">
           <span className="text-sm font-medium text-slate-900 dark:text-white">
             {row?.cell?.value?.fullName ?? "—"}
           </span>
           <span className="text-xs text-slate-500">{row?.cell?.value?.email}</span>
-        </div>
+        </UserLink>
       ),
     },
     {
       Header: t("reviews.to"),
       accessor: "reviewed",
       Cell: (row) => (
-        <div className="flex flex-col">
+        <UserLink id={row?.cell?.value?.id} className="flex flex-col">
           <span className="text-sm text-slate-600 dark:text-slate-300">
             {row?.cell?.value?.fullName ?? "—"}
           </span>
           <span className="text-xs text-slate-500">{row?.cell?.value?.email}</span>
-        </div>
+        </UserLink>
       ),
     },
     {
       Header: t("reviews.task"),
       accessor: "task",
       Cell: (row) => (
-        <span className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 max-w-[180px]">
-          {row?.cell?.value?.title ?? "—"}
-        </span>
+        <TaskLink id={row?.cell?.value?.id} className="max-w-[180px]">
+          <span className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">
+            {row?.cell?.value?.title ?? "—"}
+          </span>
+        </TaskLink>
       ),
     },
     {

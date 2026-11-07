@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import Card from "@/components/ui/Card";
 import Icon from "@/components/ui/Icon";
 import Modal from "@/components/ui/Modal";
@@ -125,10 +126,10 @@ export default function AdminUsers() {
                 {row?.cell?.value?.charAt(0)}
               </span>
             </span>
-            <div className="flex flex-col">
-              <span className="text-sm text-slate-600 dark:text-slate-300 capitalize">{row?.cell?.value}</span>
+            <Link href={`/admin/users/${row.row.original.id}`} className="flex flex-col group">
+              <span className="text-sm text-slate-600 dark:text-slate-300 capitalize group-hover:text-primary-500">{row?.cell?.value}</span>
               <span className="text-xs text-slate-500">{row?.row?.original?.email}</span>
-            </div>
+            </Link>
           </span>
         </div>
       ),
@@ -196,6 +197,11 @@ export default function AdminUsers() {
         const isLocked = user?.lockedUntil && new Date(user.lockedUntil) > new Date();
         return (
           <div className="flex space-x-3 rtl:space-x-reverse">
+            <Tooltip content={t("detail.open")} placement="top" arrow animation="shift-away">
+              <Link className="action-btn" href={`/admin/users/${user.id}`}>
+                <Icon icon="heroicons:eye" />
+              </Link>
+            </Tooltip>
             <Tooltip content={t("common.edit")} placement="top" arrow animation="shift-away">
               <button className="action-btn" type="button" onClick={() => handleEdit(user)}>
                 <Icon icon="heroicons:pencil-square" />

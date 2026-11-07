@@ -28,7 +28,7 @@ const RecentTasks = ({ tasks = [] }) => {
                         </div>
                     </div>
                     <div className="flex-1">
-                        <Link href={`/admin/tasks`} className="text-slate-800 dark:text-slate-300 font-medium hover:text-primary-500 text-sm block mb-1 truncate">
+                        <Link href={`/admin/tasks/${task.id}`} className="text-slate-800 dark:text-slate-300 font-medium hover:text-primary-500 text-sm block mb-1 truncate">
                             {task.title}
                         </Link>
                         <div className="text-xs text-slate-500 dark:text-slate-400">
