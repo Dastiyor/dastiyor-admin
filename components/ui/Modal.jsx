@@ -1,6 +1,7 @@
 import { Dialog, Transition } from "@headlessui/react";
 import React, { Fragment, useState } from "react";
 import Icon from "@/components/ui/Icon";
+import { useSelector } from "react-redux";
 
 const Modal = ({
   activeModal,
@@ -22,6 +23,10 @@ const Modal = ({
   rootClassName = "",
 }) => {
   const [showModal, setShowModal] = useState(false);
+  // Dialogs render under <body>, outside the layout's `.dark` wrapper, so they
+  // need the class themselves to follow dark mode.
+  const isDark = useSelector((state) => state.layout?.darkMode);
+  const rootClass = `relative z-[99999] ${isDark ? "dark" : ""} ${rootClassName}`;
 
   const closeModal = () => {
     setShowModal(false);
@@ -48,7 +53,7 @@ const Modal = ({
           <Transition appear show={showModal} as={Fragment}>
             <Dialog
               as="div"
-              className="relative z-[99999]"
+              className={rootClass}
               onClose={!disableBackdrop ? closeModal : returnNull}
             >
               {!disableBackdrop && (
@@ -117,7 +122,7 @@ const Modal = ({
         <Transition appear show={activeModal} as={Fragment}>
           <Dialog
             as="div"
-            className={`relative z-[99999] ${rootClassName}`}
+            className={rootClass}
             onClose={onClose}
             initialFocus={initialFocus}
           >

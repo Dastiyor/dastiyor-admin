@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useRef, useState } from "react";
-import { useSelector } from "react-redux";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import { useTranslation } from "@/context/LanguageContext";
@@ -22,8 +21,6 @@ const ConfirmContext = createContext(null);
 
 export function ConfirmProvider({ children }) {
   const { t } = useTranslation();
-  // The dialog is portalled to <body>, outside the layout's `.dark` wrapper.
-  const isDark = useSelector((state) => state.layout?.darkMode);
   const [open, setOpen] = useState(false);
   // Kept after closing so the text doesn't vanish during the leave transition.
   const [options, setOptions] = useState({});
@@ -57,7 +54,6 @@ export function ConfirmProvider({ children }) {
         onClose={() => settle(false)}
         centered
         className="max-w-md"
-        rootClassName={isDark ? "dark" : ""}
         initialFocus={confirmButtonRef}
         title={title || t("common.confirmTitle")}
         footerContent={
