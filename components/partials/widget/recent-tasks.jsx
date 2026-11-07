@@ -2,10 +2,10 @@
 import React from "react";
 import Link from "next/link";
 import { useTranslation } from "@/context/LanguageContext";
-import { TaskStatus } from "@/components/partials/admin/Detail";
+import { TaskStatus, fmtDate } from "@/components/partials/admin/Detail";
 
 const RecentTasks = ({ tasks = [] }) => {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
     if (!tasks.length) {
         return (
             <div className="text-center py-4 text-slate-500">
@@ -36,13 +36,13 @@ const RecentTasks = ({ tasks = [] }) => {
                             {task.title}
                         </Link>
                         <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                            {t("dashboard.by")} <span className="font-medium text-slate-700 dark:text-slate-300">{task.user?.fullName}</span>
+                            {t("dashboard.by")} <span className="font-medium text-slate-700 dark:text-slate-300">{task.user?.fullName || t("dashboard.unnamed")}</span>
                         </div>
                     </div>
                     <div className="flex-none text-right">
-                        <TaskStatus status={task.status} />
+                        <TaskStatus status={task.status} className="pill" />
                         <div className="text-xs text-slate-400 mt-1">
-                            {new Date(task.createdAt).toLocaleDateString()}
+                            {fmtDate(task.createdAt, false, locale)}
                         </div>
                     </div>
                 </li>

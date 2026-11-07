@@ -18,9 +18,8 @@ import {
   ComplaintRows,
   DetailState,
   fmtDate,
+  RoleBadge,
 } from "@/components/partials/admin/Detail";
-
-const ROLE_KEYS = { CUSTOMER: "users.roleCustomer", PROVIDER: "users.roleProvider", ADMIN: "users.roleAdmin" };
 
 function parseList(raw) {
   try {
@@ -124,7 +123,7 @@ export default function UserDetail() {
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h4 className="text-xl font-medium text-slate-900 dark:text-white">{user.fullName}</h4>
-              <span className="badge bg-primary-500/10 text-primary-500">{t(ROLE_KEYS[user.role] || user.role)}</span>
+              <RoleBadge role={user.role} />
               {user.isVerified ? (
                 <span className="badge bg-success-500/10 text-success-500">{t("users.verified")}</span>
               ) : (

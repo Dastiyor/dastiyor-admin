@@ -8,9 +8,13 @@ import { useTranslation } from "@/context/LanguageContext";
 import { toast } from "react-toastify";
 import ReportStatus from "./ReportStatus";
 
-export const fmtDate = (v, withTime = true) =>
+/** Maps the app's language ("ru" / "tg") to a date-formatting locale. */
+export const dateLocale = (locale) => (locale === "tg" ? "tg-TJ" : locale === "ru" ? "ru-RU" : undefined);
+
+/** Pass the app's `locale` so dates match the UI language, not the browser's. */
+export const fmtDate = (v, withTime = true, locale) =>
   v
-    ? new Date(v).toLocaleString(undefined, withTime ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" })
+    ? new Date(v).toLocaleString(dateLocale(locale), withTime ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" })
     : "—";
 
 /** A label/value row in a detail card. */
@@ -63,12 +67,30 @@ const TASK_STATUS_CLASS = {
   CANCELLED: "bg-danger-500/10 text-danger-500",
 };
 
-export function TaskStatus({ status }) {
+export function TaskStatus({ status, className = "" }) {
   const { t } = useTranslation();
   if (!status) return null;
   return (
-    <span className={`badge ${TASK_STATUS_CLASS[status] || "bg-slate-500/10 text-slate-500"}`}>
+    <span className={`badge ${TASK_STATUS_CLASS[status] || "bg-slate-500/10 text-slate-500"} ${className}`}>
       {TASK_STATUS_CLASS[status] ? t(`tasks.status.${status.toLowerCase()}`) : status}
+    </span>
+  );
+}
+
+export const ROLE_KEYS = { CUSTOMER: "users.roleCustomer", PROVIDER: "users.roleProvider", ADMIN: "users.roleAdmin" };
+
+const ROLE_CLASS = {
+  CUSTOMER: "bg-primary-500/10 text-primary-500",
+  PROVIDER: "bg-success-500/10 text-success-500",
+  ADMIN: "bg-warning-500/10 text-warning-500",
+};
+
+export function RoleBadge({ role, className = "" }) {
+  const { t } = useTranslation();
+  if (!role) return null;
+  return (
+    <span className={`badge ${ROLE_CLASS[role] || "bg-slate-500/10 text-slate-500"} ${className}`}>
+      {ROLE_KEYS[role] ? t(ROLE_KEYS[role]) : role}
     </span>
   );
 }

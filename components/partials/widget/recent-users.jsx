@@ -2,11 +2,10 @@
 import React from "react";
 import Link from "next/link";
 import { useTranslation } from "@/context/LanguageContext";
-
-const ROLE_KEYS = { CUSTOMER: "users.roleCustomer", PROVIDER: "users.roleProvider", ADMIN: "users.roleAdmin" };
+import { RoleBadge, fmtDate } from "@/components/partials/admin/Detail";
 
 const RecentUsers = ({ users = [] }) => {
-    const { t } = useTranslation();
+    const { t, locale } = useTranslation();
 
     if (!users.length) {
         return (
@@ -41,13 +40,11 @@ const RecentUsers = ({ users = [] }) => {
                             {user.email}
                         </div>
                         <div className="text-xs text-slate-400 mt-1">
-                            {t("dashboard.joined", { date: new Date(user.createdAt).toLocaleDateString() })}
+                            {t("dashboard.joined", { date: fmtDate(user.createdAt, false, locale) })}
                         </div>
                     </div>
                     <div className="flex-none text-right">
-                        <span className={`badge ${user.role === "PROVIDER" ? "bg-success-500/10 text-success-500" : "bg-primary-500/10 text-primary-500"} text-xs px-2 py-1 rounded-full`}>
-                            {ROLE_KEYS[user.role] ? t(ROLE_KEYS[user.role]) : user.role}
-                        </span>
+                        <RoleBadge role={user.role} className="pill" />
                     </div>
                 </li>
             ))}

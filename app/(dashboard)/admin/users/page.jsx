@@ -21,12 +21,7 @@ import { bulkDelete } from "@/lib/bulkDelete";
 import { useTranslation } from "@/context/LanguageContext";
 import { toast } from "react-toastify";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
-
-const ROLE_KEYS = {
-  CUSTOMER: "users.roleCustomer",
-  PROVIDER: "users.roleProvider",
-  ADMIN: "users.roleAdmin",
-};
+import { ROLE_KEYS, RoleBadge } from "@/components/partials/admin/Detail";
 
 export default function AdminUsers() {
   const { t, locale } = useTranslation();
@@ -139,11 +134,7 @@ export default function AdminUsers() {
     {
       Header: t("users.role"),
       accessor: "role",
-      Cell: (row) => (
-        <span className="badge bg-primary-500/10 text-primary-500">
-          {ROLE_KEYS[row?.cell?.value] ? t(ROLE_KEYS[row.cell.value]) : row?.cell?.value}
-        </span>
-      ),
+      Cell: (row) => <RoleBadge role={row?.cell?.value} />,
     },
     {
       Header: t("common.status"),
