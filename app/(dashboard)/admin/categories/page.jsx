@@ -12,6 +12,8 @@ import GlobalFilter from "@/components/partials/table/GlobalFilter";
 import RowSelectCheckbox from "@/components/partials/table/RowSelectCheckbox";
 import Tooltip from "@/components/ui/Tooltip";
 import { useTranslation } from "@/context/LanguageContext";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { toast } from "react-toastify";
 import { bulkDelete } from "@/lib/bulkDelete";
 import {
   useTable,
@@ -33,6 +35,7 @@ function parseSubcategories(val) {
 
 export default function AdminCategories() {
   const { t, locale } = useTranslation();
+  const confirm = useConfirm();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -83,7 +86,7 @@ export default function AdminCategories() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm(t("categories.confirmDelete"))) return;
+    if (!(await confirm({ message: t("categories.confirmDelete"), confirmText: t("common.delete"), danger: true }))) return;
     try {
       const res = await fetch(`/api/categories/${id}`, {
         method: "DELETE",
@@ -95,7 +98,7 @@ export default function AdminCategories() {
       }
       fetchCategories();
     } catch (e) {
-      alert(e.message);
+      toast.error(e.message);
     }
   };
 
@@ -124,7 +127,7 @@ export default function AdminCategories() {
       setModalOpen(false);
       fetchCategories();
     } catch (e) {
-      alert(e.message);
+      toast.error(e.message);
     }
   };
 
@@ -253,10 +256,10 @@ export default function AdminCategories() {
   const handleBulkDelete = async () => {
     const ids = selectedFlatRows.map((r) => r.original.id);
     if (!ids.length) return;
-    if (!confirm(t("categories.confirmBulkDelete", { count: ids.length }))) return;
+    if (!(await confirm({ message: t("categories.confirmBulkDelete", { count: ids.length }), confirmText: t("common.delete"), danger: true }))) return;
     const failed = await bulkDelete("/api/categories", ids);
     if (failed.length) {
-      alert(`${t("categories.bulkDeleteFailed", { failed: failed.length, total: ids.length })}\n${failed.join("\n")}`);
+      toast.error(`${t("categories.bulkDeleteFailed", { failed: failed.length, total: ids.length })}\n${failed.join("\n")}`);
     }
     toggleAllRowsSelected(false);
     fetchCategories();

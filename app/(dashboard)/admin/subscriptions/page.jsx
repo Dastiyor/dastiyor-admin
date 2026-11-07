@@ -15,11 +15,13 @@ import Tooltip from "@/components/ui/Tooltip";
 import { exportCsv } from "@/lib/exportCsv";
 import { fetchAllRows } from "@/lib/listClient";
 import { toast } from "react-toastify";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useTranslation } from "@/context/LanguageContext";
 import { UserLink, TaskLink } from "@/components/partials/admin/Links";
 
 export default function AdminSubscriptions() {
   const { t, locale } = useTranslation();
+  const confirm = useConfirm();
   const [filterActive, setFilterActive] = useState(""); // "" | "true" | "false"
   const [extendModal, setExtendModal] = useState(false);
   const [selectedSub, setSelectedSub] = useState(null);
@@ -39,7 +41,7 @@ export default function AdminSubscriptions() {
   );
 
   const handleRefund = async (paymentId) => {
-    if (!confirm(t("subscriptions.confirmRefund"))) return;
+    if (!(await confirm({ message: t("subscriptions.confirmRefund"), danger: true }))) return;
     setRefundBusy(paymentId);
     try {
       const res = await fetch(`/api/payments/${paymentId}`, {
@@ -89,7 +91,7 @@ export default function AdminSubscriptions() {
   };
 
   const handleCancel = async (sub) => {
-    if (!confirm(t("subscriptions.confirmCancel", { name: sub.user?.fullName }))) return;
+    if (!(await confirm({ message: t("subscriptions.confirmCancel", { name: sub.user?.fullName }), danger: true }))) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/subscriptions/${sub.id}`, {

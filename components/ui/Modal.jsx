@@ -18,6 +18,8 @@ const Modal = ({
   label = "Basic Modal",
   labelClass,
   ref,
+  initialFocus,
+  rootClassName = "",
 }) => {
   const [showModal, setShowModal] = useState(false);
 
@@ -113,7 +115,12 @@ const Modal = ({
         </>
       ) : (
         <Transition appear show={activeModal} as={Fragment}>
-          <Dialog as="div" className="relative z-[99999]" onClose={onClose}>
+          <Dialog
+            as="div"
+            className={`relative z-[99999] ${rootClassName}`}
+            onClose={onClose}
+            initialFocus={initialFocus}
+          >
             <Transition.Child
               as={Fragment}
               enter={noFade ? "" : "duration-300 ease-out"}

@@ -8,6 +8,7 @@ import Icon from "@/components/ui/Icon";
 import Button from "@/components/ui/Button";
 import { useTranslation } from "@/context/LanguageContext";
 import { toast } from "react-toastify";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import {
   Field,
   Section,
@@ -32,6 +33,7 @@ function parseList(raw) {
 
 export default function UserDetail() {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const { id } = useParams();
   const router = useRouter();
   const [data, setData] = useState(null);
@@ -74,7 +76,7 @@ export default function UserDetail() {
   };
 
   const remove = async () => {
-    if (!confirm(t("users.confirmDelete"))) return;
+    if (!(await confirm({ message: t("users.confirmDelete"), confirmText: t("common.delete"), danger: true }))) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/users/${id}`, { method: "DELETE" });

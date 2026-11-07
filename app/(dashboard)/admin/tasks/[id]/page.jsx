@@ -8,6 +8,7 @@ import Icon from "@/components/ui/Icon";
 import Button from "@/components/ui/Button";
 import { useTranslation } from "@/context/LanguageContext";
 import { toast } from "react-toastify";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import {
   Field,
   Section,
@@ -32,6 +33,7 @@ function parseImages(raw) {
 
 export default function TaskDetail() {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const { id } = useParams();
   const router = useRouter();
   const [task, setTask] = useState(null);
@@ -81,7 +83,7 @@ export default function TaskDetail() {
   };
 
   const toggleFeatured = async () => {
-    if (!task.featured && task.status !== "OPEN" && !confirm(t("tasks.featureNotOpenHint"))) return;
+    if (!task.featured && task.status !== "OPEN" && !(await confirm({ message: t("tasks.featureNotOpenHint") }))) return;
     if (await call(`/api/tasks/${id}/featured`, "PATCH", { featured: !task.featured }, t("detail.saved"))) load();
   };
 
@@ -91,7 +93,7 @@ export default function TaskDetail() {
   };
 
   const remove = async () => {
-    if (!confirm(t("tasks.confirmDelete"))) return;
+    if (!(await confirm({ message: t("tasks.confirmDelete"), confirmText: t("common.delete"), danger: true }))) return;
     if (await call(`/api/tasks/${id}`, "DELETE", null, t("detail.deleted"))) router.push("/admin/tasks");
   };
 

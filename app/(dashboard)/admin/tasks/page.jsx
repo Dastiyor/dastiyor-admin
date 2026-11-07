@@ -22,11 +22,13 @@ import { fetchAllRows } from "@/lib/listClient";
 import { bulkDelete } from "@/lib/bulkDelete";
 import { useTranslation } from "@/context/LanguageContext";
 import { toast } from "react-toastify";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 
 const MAX_FEATURED = 3;
 
 export default function AdminTasks() {
   const { t, locale } = useTranslation();
+  const confirm = useConfirm();
   const searchParams = useSearchParams();
   const [statusFilter, setStatusFilter] = useState(searchParams?.get("status") || "");
   const [urgencyFilter, setUrgencyFilter] = useState("");
@@ -145,13 +147,13 @@ export default function AdminTasks() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm(t("tasks.confirmDelete"))) return;
+    if (!(await confirm({ message: t("tasks.confirmDelete"), confirmText: t("common.delete"), danger: true }))) return;
     if (await send(`/api/tasks/${id}`, "DELETE")) reload();
   };
 
   const toggleFeatured = async (task) => {
     const turningOn = !task.featured;
-    if (turningOn && task.status !== "OPEN" && !confirm(t("tasks.featureNotOpenHint"))) return;
+    if (turningOn && task.status !== "OPEN" && !(await confirm({ message: t("tasks.featureNotOpenHint") }))) return;
     if (await send(`/api/tasks/${task.id}/featured`, "PATCH", { featured: turningOn })) reload();
   };
 
@@ -299,7 +301,7 @@ export default function AdminTasks() {
   const handleBulkDelete = async () => {
     const ids = selectedFlatRows.map((r) => r.original.id);
     if (!ids.length) return;
-    if (!confirm(t("tasks.confirmBulkDelete", { count: ids.length }))) return;
+    if (!(await confirm({ message: t("tasks.confirmBulkDelete", { count: ids.length }), confirmText: t("common.delete"), danger: true }))) return;
     const failed = await bulkDelete("/api/tasks", ids);
     if (failed.length) {
       toast.error(`${t("tasks.bulkDeleteFailed", { failed: failed.length, total: ids.length })}\n${failed.join("\n")}`);

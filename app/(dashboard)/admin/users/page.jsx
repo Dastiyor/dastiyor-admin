@@ -20,6 +20,7 @@ import { fetchAllRows } from "@/lib/listClient";
 import { bulkDelete } from "@/lib/bulkDelete";
 import { useTranslation } from "@/context/LanguageContext";
 import { toast } from "react-toastify";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 
 const ROLE_KEYS = {
   CUSTOMER: "users.roleCustomer",
@@ -29,6 +30,7 @@ const ROLE_KEYS = {
 
 export default function AdminUsers() {
   const { t, locale } = useTranslation();
+  const confirm = useConfirm();
   const [roleFilter, setRoleFilter] = useState("");
   const [verifiedFilter, setVerifiedFilter] = useState("");
   const [userSearch, setUserSearch] = useState("");
@@ -83,7 +85,7 @@ export default function AdminUsers() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm(t("users.confirmDelete"))) return;
+    if (!(await confirm({ message: t("users.confirmDelete"), confirmText: t("common.delete"), danger: true }))) return;
     if (await send(`/api/users/${id}`, "DELETE")) reload();
   };
 
@@ -246,7 +248,7 @@ export default function AdminUsers() {
   const handleBulkDelete = async () => {
     const ids = selectedFlatRows.map((r) => r.original.id);
     if (!ids.length) return;
-    if (!confirm(t("users.confirmBulkDelete", { count: ids.length }))) return;
+    if (!(await confirm({ message: t("users.confirmBulkDelete", { count: ids.length }), confirmText: t("common.delete"), danger: true }))) return;
     const failed = await bulkDelete("/api/users", ids);
     if (failed.length) {
       toast.error(`${t("users.bulkDeleteFailed", { failed: failed.length, total: ids.length })}\n${failed.join("\n")}`);
