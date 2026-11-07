@@ -40,3 +40,6 @@ prisma/*.db-journal
 .claude
 .agents
 skills-lock.json
+
+# stray "~" folder created by tools that did not expand the home path
+/~/
