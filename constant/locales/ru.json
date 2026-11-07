@@ -69,7 +69,8 @@
     "close": "Закрыть",
     "error": "Ошибка",
     "none": "—",
-    "refresh": "Обновить"
+    "refresh": "Обновить",
+    "rangeOf": "{from}–{to} из {total}"
   },
   "activity": {
     "userJoined": "Новый пользователь",
@@ -205,7 +206,8 @@
     "actionRejectResponse": "Отклонение отклика",
     "actionCreateResponse": "Создание отклика",
     "actionSubscribe": "Оформление подписки",
-    "actionCancelSubscription": "Отмена подписки"
+    "actionCancelSubscription": "Отмена подписки",
+    "adminActions": "Действия администраторов"
   },
   "tasks": {
     "title": "Управление заданиями",

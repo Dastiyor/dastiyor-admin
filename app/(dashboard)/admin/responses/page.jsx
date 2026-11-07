@@ -1,44 +1,22 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import Card from "@/components/ui/Card";
 import Icon from "@/components/ui/Icon";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
-import GlobalFilter from "@/components/partials/table/GlobalFilter";
-import {
-  useTable,
-  useSortBy,
-  useGlobalFilter,
-  usePagination,
-} from "react-table";
+import DataTable from "@/components/partials/table/DataTable";
+import TablePagination from "@/components/partials/table/TablePagination";
+import useServerTable from "@/hooks/useServerTable";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useTranslation } from "@/context/LanguageContext";
 
 export default function AdminResponses() {
   const { t, locale } = useTranslation();
-  const [responses, setResponses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState("");
 
-  const fetchResponses = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const q = statusFilter ? `&status=${statusFilter}` : "";
-      const res = await fetch(`/api/responses?limit=500${q}`, { credentials: "include" });
-      if (!res.ok) throw new Error(await res.text());
-      const json = await res.json();
-      setResponses(json.data || []);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchResponses();
-  }, [statusFilter]);
+  const [search, setSearch] = useState("");
+  const q = useDebouncedValue(search.trim());
+  const params = useMemo(() => ({ status: statusFilter, q }), [statusFilter, q]);
 
   const COLUMNS = [
     {
@@ -132,39 +110,14 @@ export default function AdminResponses() {
     },
   ];
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const columns = useMemo(() => COLUMNS, [locale]);
-  const data = useMemo(() => responses, [responses]);
-
-  const tableInstance = useTable(
-    {
-      columns,
-      data,
-      initialState: { pageIndex: 0, pageSize: 10 },
-    },
-    useGlobalFilter,
-    useSortBy,
-    usePagination
-  );
-
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    page,
-    nextPage,
-    previousPage,
-    canNextPage,
-    canPreviousPage,
-    pageOptions,
-    state,
-    gotoPage,
-    pageCount,
-    setPageSize,
-    setGlobalFilter,
-    prepareRow,
-  } = tableInstance;
-
-  const { globalFilter, pageIndex, pageSize } = state;
+  const { table, data, setData, total, loading, loaded, error, reload } = useServerTable({
+    endpoint: "/api/responses",
+    params,
+    columns,
+    sortable: ['priceNum', 'status', 'createdAt'],
+  });
 
   return (
     <div>
@@ -185,7 +138,13 @@ export default function AdminResponses() {
               <option value="ACCEPTED">{t("responses.status.accepted")}</option>
               <option value="REJECTED">{t("responses.status.rejected")}</option>
             </select>
-            <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
+            <input
+              type="text"
+              className="form-control py-2"
+              placeholder={t("common.search")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
         </div>
         {error && (
@@ -194,129 +153,8 @@ export default function AdminResponses() {
             {error}
           </p>
         )}
-        {loading ? (
-          <div className="p-5 text-center text-slate-500">{t("common.loading")}</div>
-        ) : (
-          <>
-            <div className="overflow-x-auto -mx-6">
-              <div className="inline-block min-w-full align-middle">
-                <table
-                  className="min-w-full divide-y divide-slate-100 table-fixed dark:divide-slate-700"
-                  {...getTableProps()}
-                >
-                  <thead className="bg-slate-200 dark:bg-slate-700">
-                    {headerGroups.map((headerGroup) => {
-                      const { key, ...rest } = headerGroup.getHeaderGroupProps();
-                      return (
-                        <tr key={key} {...rest}>
-                          {headerGroup.headers.map((column) => {
-                            const { key: cKey, ...cRest } = column.getHeaderProps(
-                              column.getSortByToggleProps()
-                            );
-                            return (
-                              <th key={cKey} {...cRest} scope="col" className="table-th">
-                                {column.render("Header")}
-                                <span>
-                                  {column.isSorted
-                                    ? column.isSortedDesc
-                                      ? " 🔽"
-                                      : " 🔼"
-                                    : ""}
-                                </span>
-                              </th>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })}
-                  </thead>
-                  <tbody
-                    className="bg-white divide-y divide-slate-100 dark:bg-slate-800 dark:divide-slate-700"
-                    {...getTableBodyProps()}
-                  >
-                    {page.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={COLUMNS.length}
-                          className="table-td text-center text-slate-500 py-8"
-                        >
-                          {t("responses.empty")}
-                        </td>
-                      </tr>
-                    ) : (
-                      page.map((row) => {
-                        prepareRow(row);
-                        const { key, ...rest } = row.getRowProps();
-                        return (
-                          <tr key={key} {...rest}>
-                            {row.cells.map((cell) => {
-                              const { key: cellKey, ...cellRest } = cell.getCellProps();
-                              return (
-                                <td key={cellKey} {...cellRest} className="table-td">
-                                  {cell.render("Cell")}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            {page.length > 0 && (
-              <div className="md:flex justify-between items-center mt-6">
-                <div className="flex items-center space-x-3 rtl:space-x-reverse">
-                  <select
-                    className="form-control py-2 w-max"
-                    value={pageSize}
-                    onChange={(e) => setPageSize(Number(e.target.value))}
-                  >
-                    {[10, 25, 50].map((n) => (
-                      <option key={n} value={n}>
-                        {t("common.show", { n })}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="text-sm text-slate-600 dark:text-slate-300">
-                    {t("common.pageOf", { page: pageIndex + 1, total: pageOptions.length || 1 })}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2 mt-4 md:mt-0">
-                  <button
-                    className="btn btn-sm btn-outline-dark"
-                    onClick={() => gotoPage(0)}
-                    disabled={!canPreviousPage}
-                  >
-                    <Icon icon="heroicons:chevron-double-left-solid" />
-                  </button>
-                  <button
-                    className="btn btn-sm btn-outline-dark"
-                    onClick={() => previousPage()}
-                    disabled={!canPreviousPage}
-                  >
-                    {t("common.prev")}
-                  </button>
-                  <button
-                    className="btn btn-sm btn-outline-dark"
-                    onClick={() => nextPage()}
-                    disabled={!canNextPage}
-                  >
-                    {t("common.next")}
-                  </button>
-                  <button
-                    className="btn btn-sm btn-outline-dark"
-                    onClick={() => gotoPage(pageCount - 1)}
-                    disabled={!canNextPage}
-                  >
-                    <Icon icon="heroicons:chevron-double-right-solid" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
+        <DataTable table={table} loading={loading} loaded={loaded} emptyText={t("common.noResult")} />
+        <TablePagination table={table} total={total} />
       </Card>
     </div>
   );

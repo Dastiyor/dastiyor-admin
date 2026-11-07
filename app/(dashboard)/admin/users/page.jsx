@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import Card from "@/components/ui/Card";
 import Icon from "@/components/ui/Icon";
 import Modal from "@/components/ui/Modal";
@@ -9,20 +9,16 @@ import Select from "@/components/ui/Select";
 import Checkbox from "@/components/ui/Checkbox";
 import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
-import GlobalFilter from "@/components/partials/table/GlobalFilter";
-import RowSelectCheckbox from "@/components/partials/table/RowSelectCheckbox";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
-import TableSkeleton from "@/components/ui/TableSkeleton";
+import DataTable from "@/components/partials/table/DataTable";
+import TablePagination from "@/components/partials/table/TablePagination";
+import useServerTable from "@/hooks/useServerTable";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { exportCsv } from "@/lib/exportCsv";
+import { fetchAllRows } from "@/lib/listClient";
 import { bulkDelete } from "@/lib/bulkDelete";
 import { useTranslation } from "@/context/LanguageContext";
-import {
-  useTable,
-  useRowSelect,
-  useSortBy,
-  useGlobalFilter,
-  usePagination,
-} from "react-table";
+import { toast } from "react-toastify";
 
 const ROLE_KEYS = {
   CUSTOMER: "users.roleCustomer",
@@ -32,48 +28,38 @@ const ROLE_KEYS = {
 
 export default function AdminUsers() {
   const { t, locale } = useTranslation();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
   const [roleFilter, setRoleFilter] = useState("");
   const [verifiedFilter, setVerifiedFilter] = useState("");
   const [userSearch, setUserSearch] = useState("");
   const [docsModal, setDocsModal] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const q = useDebouncedValue(userSearch.trim());
+  const params = useMemo(
+    () => ({ role: roleFilter, verified: verifiedFilter, q }),
+    [roleFilter, verifiedFilter, q]
+  );
 
   const [modalOpen, setModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [formData, setFormData] = useState({ fullName: "", email: "", password: "", role: "CUSTOMER", isVerified: false, phone: "", balance: "" });
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    setError(null);
+  // Sends a request and surfaces the API's error message; returns the parsed body or null.
+  const send = async (url, method, body) => {
     try {
-      const qs = new URLSearchParams({ limit: "1000" });
-      if (roleFilter) qs.set("role", roleFilter);
-      const res = await fetch(`/api/users?${qs.toString()}`);
-      if (!res.ok) throw new Error(await res.text());
-      const json = await res.json();
-      let data = json.data || [];
-      if (verifiedFilter === "true") data = data.filter((u) => u.isVerified);
-      if (verifiedFilter === "false") data = data.filter((u) => !u.isVerified);
-      if (userSearch.trim()) {
-        const q = userSearch.trim().toLowerCase();
-        data = data.filter((u) =>
-          u.fullName?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q) || u.phone?.includes(q)
-        );
-      }
-      setUsers(data);
+      const res = await fetch(url, {
+        method,
+        headers: body ? { "Content-Type": "application/json" } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || res.statusText);
+      return json;
     } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
+      toast.error(e.message);
+      return null;
     }
   };
-
-  useEffect(() => {
-    fetchUsers();
-  }, [roleFilter, verifiedFilter, userSearch]);
 
   const handleCreate = () => {
     setCurrentUser(null);
@@ -97,26 +83,17 @@ export default function AdminUsers() {
 
   const handleDelete = async (id) => {
     if (!confirm(t("users.confirmDelete"))) return;
-    try {
-      const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error(await res.text());
-      fetchUsers();
-    } catch (e) {
-      alert(e.message);
-    }
+    if (await send(`/api/users/${id}`, "DELETE")) reload();
   };
 
   const handleUnlock = async (id) => {
-    try {
-      const res = await fetch(`/api/users/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ unlock: true }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      fetchUsers();
-    } catch (e) {
-      alert(e.message);
+    if (await send(`/api/users/${id}`, "PUT", { unlock: true })) reload();
+  };
+
+  const setVerified = async (user, isVerified) => {
+    if (await send(`/api/users/${user.id}`, "PUT", { isVerified })) {
+      setDocsModal(null);
+      reload();
     }
   };
 
@@ -127,21 +104,12 @@ export default function AdminUsers() {
     if (currentUser && !body.password) delete body.password;
     if (body.balance === "" || body.balance === null) delete body.balance;
 
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || res.statusText);
-      }
+    setSaving(true);
+    const ok = await send(url, method, body);
+    setSaving(false);
+    if (ok) {
       setModalOpen(false);
-      fetchUsers();
-    } catch (e) {
-      alert(e.message);
+      reload();
     }
   };
 
@@ -154,7 +122,7 @@ export default function AdminUsers() {
           <span className="inline-flex items-center">
             <span className="w-7 h-7 rounded-full ltr:mr-3 rtl:ml-3 flex-none bg-slate-600">
               <span className="text-white text-xs flex w-full h-full justify-center items-center">
-                {row?.cell?.value.charAt(0)}
+                {row?.cell?.value?.charAt(0)}
               </span>
             </span>
             <div className="flex flex-col">
@@ -258,60 +226,16 @@ export default function AdminUsers() {
     },
   ];
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const columns = useMemo(() => COLUMNS, [locale]);
-  const data = useMemo(() => users, [users]);
-
-  const tableInstance = useTable(
-    {
-      columns,
-      data,
-      initialState: { pageIndex: 0, pageSize: 10 }, // Set initial page size
-    },
-    useGlobalFilter,
-    useSortBy,
-    usePagination,
-    useRowSelect,
-    (hooks) => {
-      hooks.visibleColumns.push((columns) => [
-        {
-          id: "selection",
-          Header: ({ getToggleAllRowsSelectedProps }) => (
-            <div>
-              <RowSelectCheckbox {...getToggleAllRowsSelectedProps()} />
-            </div>
-          ),
-          Cell: ({ row }) => (
-            <div>
-              <RowSelectCheckbox {...row.getToggleRowSelectedProps()} />
-            </div>
-          ),
-        },
-        ...columns,
-      ]);
-    }
-  );
-
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    page,
-    nextPage,
-    previousPage,
-    canNextPage,
-    canPreviousPage,
-    pageOptions,
-    state,
-    gotoPage,
-    pageCount,
-    setPageSize,
-    setGlobalFilter,
-    prepareRow,
-    selectedFlatRows,
-    toggleAllRowsSelected,
-  } = tableInstance;
-
-  const { globalFilter, pageIndex, pageSize } = state;
+  const { table, total, loading, loaded, error, reload, sortBy } = useServerTable({
+    endpoint: "/api/users",
+    params,
+    columns,
+    sortable: ["fullName", "role", "isVerified", "balance"],
+    selectable: true,
+  });
+  const { selectedFlatRows, toggleAllRowsSelected } = table;
 
   const handleBulkDelete = async () => {
     const ids = selectedFlatRows.map((r) => r.original.id);
@@ -319,10 +243,26 @@ export default function AdminUsers() {
     if (!confirm(t("users.confirmBulkDelete", { count: ids.length }))) return;
     const failed = await bulkDelete("/api/users", ids);
     if (failed.length) {
-      alert(`${t("users.bulkDeleteFailed", { failed: failed.length, total: ids.length })}\n${failed.join("\n")}`);
+      toast.error(`${t("users.bulkDeleteFailed", { failed: failed.length, total: ids.length })}\n${failed.join("\n")}`);
     }
     toggleAllRowsSelected(false);
-    fetchUsers();
+    reload();
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const rows = await fetchAllRows("/api/users", params, sortBy);
+      exportCsv("users.csv", rows.map((u) => ({
+        id: u.id, fullName: u.fullName, email: u.email, role: u.role,
+        phone: u.phone || "", isVerified: u.isVerified, balance: u.balance || 0,
+        createdAt: u.createdAt,
+      })));
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -339,15 +279,8 @@ export default function AdminUsers() {
                 onClick={handleBulkDelete}
               />
             )}
-            <button
-              className="btn btn-sm btn-outline-dark"
-              onClick={() => exportCsv("users.csv", users.map((u) => ({
-                id: u.id, fullName: u.fullName, email: u.email, role: u.role,
-                phone: u.phone || "", isVerified: u.isVerified, balance: u.balance || 0,
-                createdAt: u.createdAt,
-              })))}
-            >
-              {t("common.exportCsv")}
+            <button className="btn btn-sm btn-outline-dark" onClick={handleExport} disabled={exporting || total === 0}>
+              {exporting ? t("common.loading") : t("common.exportCsv")}
             </button>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
@@ -376,164 +309,18 @@ export default function AdminUsers() {
               <option value="true">{t("users.verified")}</option>
               <option value="false">{t("users.unverified")}</option>
             </select>
-            <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
         </div>
         {error && (
           <p className="text-danger text-sm mb-4 flex items-center gap-2">
             <Icon icon="heroicons-outline:exclamation-circle" className="text-lg" />
-            {error} — {t("users.dbHint")}
+            {error}
           </p>
         )}
-        {loading ? (
-          <TableSkeleton rows={8} cols={6} />
-        ) : (
-          <>
-            <div className="overflow-x-auto -mx-6">
-              <div className="inline-block min-w-full align-middle">
-                <div className="overflow-hidden ">
-                  <table
-                    className="min-w-full divide-y divide-slate-100 table-fixed dark:divide-slate-700"
-                    {...getTableProps()}
-                  >
-                    <thead className="bg-slate-200 dark:bg-slate-700">
-                      {headerGroups.map((headerGroup) => {
-                        const { key, ...restHeaderGroupProps } = headerGroup.getHeaderGroupProps();
-                        return (
-                          <tr key={key} {...restHeaderGroupProps}>
-                            {headerGroup.headers.map((column) => {
-                              const { key, ...restColumn } = column.getHeaderProps(column.getSortByToggleProps());
-                              return (
-                                <th
-                                  key={key}
-                                  {...restColumn}
-                                  scope="col"
-                                  className=" table-th "
-                                >
-                                  {column.render("Header")}
-                                  <span>
-                                    {column.isSorted
-                                      ? column.isSortedDesc
-                                        ? " 🔽"
-                                        : " 🔼"
-                                      : ""}
-                                  </span>
-                                </th>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </thead>
-                    <tbody
-                      className="bg-white divide-y divide-slate-100 dark:bg-slate-800 dark:divide-slate-700"
-                      {...getTableBodyProps()}
-                    >
-                      {page.map((row) => {
-                        prepareRow(row);
-                        const { key, ...restRowProps } = row.getRowProps();
-                        return (
-                          <tr key={key} {...restRowProps}>
-                            {row.cells.map((cell) => {
-                              const { key, ...restCellProps } = cell.getCellProps();
-                              return (
-                                <td
-                                  key={key}
-                                  {...restCellProps}
-                                  className="table-td"
-                                >
-                                  {cell.render("Cell")}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            <div className="md:flex md:space-y-0 space-y-5 justify-between mt-6 items-center">
-              <div className=" flex items-center space-x-3 rtl:space-x-reverse">
-                <select
-                  className="form-control py-2 w-max"
-                  value={pageSize}
-                  onChange={(e) => setPageSize(Number(e.target.value))}
-                >
-                  {[10, 25, 50, 100].map((pageSize) => (
-                    <option key={pageSize} value={pageSize}>
-                      {t("common.show", { n: pageSize })}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                  {t("common.pageOf", { page: pageIndex + 1, total: pageOptions.length })}
-                </span>
-              </div>
-              <ul className="flex items-center  space-x-3  rtl:space-x-reverse flex-wrap">
-                <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
-                  <button
-                    className={` ${!canPreviousPage ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                    onClick={() => gotoPage(0)}
-                    disabled={!canPreviousPage}
-                  >
-                    <Icon icon="heroicons:chevron-double-left-solid" />
-                  </button>
-                </li>
-                <li className="text-sm leading-4 text-slate-900 dark:text-white rtl:rotate-180">
-                  <button
-                    className={` ${!canPreviousPage ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                    onClick={() => previousPage()}
-                    disabled={!canPreviousPage}
-                  >
-                    {t("common.prev")}
-                  </button>
-                </li>
-                {pageOptions.map((page, pageIdx) => (
-                  <li key={pageIdx}>
-                    <button
-                      href="#"
-                      aria-current="page"
-                      className={` ${pageIdx === pageIndex
-                          ? "bg-slate-900 dark:bg-slate-600  dark:text-slate-200 text-white font-medium "
-                          : "bg-slate-100 dark:bg-slate-700 dark:text-slate-400 text-slate-900  font-normal  "
-                        }    text-sm rounded leading-[16px] flex h-6 w-6 items-center justify-center transition-all duration-150`}
-                      onClick={() => gotoPage(pageIdx)}
-                    >
-                      {page + 1}
-                    </button>
-                  </li>
-                ))}
-                <li className="text-sm leading-4 text-slate-900 dark:text-white rtl:rotate-180">
-                  <button
-                    className={` ${!canNextPage ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                    onClick={() => nextPage()}
-                    disabled={!canNextPage}
-                  >
-                    {t("common.next")}
-                  </button>
-                </li>
-                <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
-                  <button
-                    onClick={() => gotoPage(pageCount - 1)}
-                    disabled={!canNextPage}
-                    className={` ${!canNextPage ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                  >
-                    <Icon icon="heroicons:chevron-double-right-solid" />
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </>
-        )}
+        <DataTable table={table} loading={loading} loaded={loaded} emptyText={t("common.noResult")} skeletonCols={7} />
+        <TablePagination table={table} total={total} />
       </Card>
 
-      {/* Modal Logic preserved */}
       <Modal
         activeModal={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -542,6 +329,7 @@ export default function AdminUsers() {
           <Button
             text={currentUser ? t("common.update") : t("common.create")}
             className="btn-dark"
+            isLoading={saving}
             onClick={handleSubmit}
           />
         }
@@ -630,26 +418,12 @@ export default function AdminUsers() {
                 <Button
                   text={t("users.approveProvider")}
                   className="btn-success btn-sm"
-                  onClick={async () => {
-                    const res = await fetch(`/api/users/${docsModal.id}`, {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ ...docsModal, isVerified: true }),
-                    });
-                    if (res.ok) { setDocsModal(null); fetchUsers(); }
-                  }}
+                  onClick={() => setVerified(docsModal, true)}
                 />
                 <Button
                   text={t("users.rejectUnverify")}
                   className="btn-danger btn-sm"
-                  onClick={async () => {
-                    const res = await fetch(`/api/users/${docsModal.id}`, {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ ...docsModal, isVerified: false }),
-                    });
-                    if (res.ok) { setDocsModal(null); fetchUsers(); }
-                  }}
+                  onClick={() => setVerified(docsModal, false)}
                 />
               </div>
             </div>

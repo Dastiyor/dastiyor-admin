@@ -10,35 +10,45 @@ import Textarea from "@/components/ui/Textarea";
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
-import GlobalFilter from "@/components/partials/table/GlobalFilter";
-import RowSelectCheckbox from "@/components/partials/table/RowSelectCheckbox";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
-import TableSkeleton from "@/components/ui/TableSkeleton";
+import DataTable from "@/components/partials/table/DataTable";
+import TablePagination from "@/components/partials/table/TablePagination";
+import useServerTable from "@/hooks/useServerTable";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { exportCsv } from "@/lib/exportCsv";
+import { fetchAllRows } from "@/lib/listClient";
 import { bulkDelete } from "@/lib/bulkDelete";
 import { useTranslation } from "@/context/LanguageContext";
-import {
-  useTable,
-  useRowSelect,
-  useSortBy,
-  useGlobalFilter,
-  usePagination,
-} from "react-table";
+import { toast } from "react-toastify";
+
+const MAX_FEATURED = 3;
 
 export default function AdminTasks() {
   const { t, locale } = useTranslation();
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("");
+  const searchParams = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState(searchParams?.get("status") || "");
   const [urgencyFilter, setUrgencyFilter] = useState("");
   const [sortFilter, setSortFilter] = useState("newest");
-  const [searchQ, setSearchQ] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [featuredOnly, setFeaturedOnly] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const q = useDebouncedValue(searchInput.trim());
+  const params = useMemo(
+    () => ({
+      status: statusFilter,
+      urgency: urgencyFilter,
+      sort: sortFilter,
+      q,
+      from: dateFrom,
+      to: dateTo,
+      featured: featuredOnly ? "true" : "",
+    }),
+    [statusFilter, urgencyFilter, sortFilter, q, dateFrom, dateTo, featuredOnly]
+  );
 
   const [modalOpen, setModalOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState(null);
@@ -55,39 +65,26 @@ export default function AdminTasks() {
     dueDate: "",
     userId: "",
   });
-  const searchParams = useSearchParams();
-
-  const fetchTasks = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Fetch larger set for client-side pagination
-      const qs = new URLSearchParams({ limit: "1000" });
-      if (statusFilter) qs.set("status", statusFilter);
-      if (urgencyFilter) qs.set("urgency", urgencyFilter);
-      if (sortFilter) qs.set("sort", sortFilter);
-      if (searchQ) qs.set("q", searchQ);
-      if (dateFrom) qs.set("from", dateFrom);
-      if (dateTo) qs.set("to", dateTo);
-      const res = await fetch(`/api/tasks?${qs.toString()}`, { credentials: "include" });
-      if (!res.ok) throw new Error(await res.text());
-      const json = await res.json();
-      setTasks(json.data || []);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     const statusFromUrl = searchParams?.get("status");
     if (statusFromUrl) setStatusFilter(statusFromUrl);
   }, [searchParams]);
 
-  useEffect(() => {
-    fetchTasks();
-  }, [statusFilter, urgencyFilter, sortFilter, searchQ, dateFrom, dateTo]);
+  const send = async (url, method, body) => {
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: body ? { "Content-Type": "application/json" } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || res.statusText);
+      return json;
+    } catch (e) {
+      toast.error(e.message);
+      return null;
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -145,61 +142,29 @@ export default function AdminTasks() {
 
   const handleDelete = async (id) => {
     if (!confirm(t("tasks.confirmDelete"))) return;
-    try {
-      const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error(await res.text());
-      fetchTasks();
-    } catch (e) {
-      alert(e.message);
-    }
+    if (await send(`/api/tasks/${id}`, "DELETE")) reload();
   };
-
-  const featuredCount = useMemo(() => tasks.filter((x) => x.featured).length, [tasks]);
 
   const toggleFeatured = async (task) => {
     const turningOn = !task.featured;
     if (turningOn && task.status !== "OPEN" && !confirm(t("tasks.featureNotOpenHint"))) return;
-    try {
-      const res = await fetch(`/api/tasks/${task.id}/featured`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ featured: !task.featured }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || res.statusText);
-      setTasks((prev) =>
-        prev.map((x) =>
-          x.id === task.id ? { ...x, featured: data.featured, featuredAt: data.featuredAt } : x
-        )
-      );
-    } catch (e) {
-      alert(e.message);
-    }
+    if (await send(`/api/tasks/${task.id}/featured`, "PATCH", { featured: turningOn })) reload();
   };
 
   const handleSubmit = async () => {
     const url = currentTask ? `/api/tasks/${currentTask.id}` : "/api/tasks";
     const method = currentTask ? "PUT" : "POST";
-    const body = { ...formData };
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || res.statusText);
-      }
+    setSaving(true);
+    const ok = await send(url, method, { ...formData });
+    setSaving(false);
+    if (ok) {
       setModalOpen(false);
-      fetchTasks();
-    } catch (e) {
-      alert(e.message);
+      reload();
     }
   };
+
+  // Site-wide count from the API (the cap covers all tasks, not just this page).
+  const [featuredCount, setFeaturedCount] = useState(0);
 
   const COLUMNS = [
     {
@@ -271,7 +236,7 @@ export default function AdminTasks() {
       Cell: (row) => {
         const task = row?.row?.original;
         const isOn = !!task?.featured;
-        const atCap = !isOn && featuredCount >= 3;
+        const atCap = !isOn && featuredCount >= MAX_FEATURED;
         return (
           <Tooltip
             content={isOn ? t("tasks.unfeature") : atCap ? t("tasks.featureCapReached") : t("tasks.feature")}
@@ -313,63 +278,19 @@ export default function AdminTasks() {
     },
   ];
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const columns = useMemo(() => COLUMNS, [locale, featuredCount]);
-  const data = useMemo(
-    () => (featuredOnly ? tasks.filter((x) => x.featured) : tasks),
-    [tasks, featuredOnly]
-  );
-
-  const tableInstance = useTable(
-    {
-      columns,
-      data,
-      initialState: { pageIndex: 0, pageSize: 10 },
-    },
-    useGlobalFilter,
-    useSortBy,
-    usePagination,
-    useRowSelect,
-    (hooks) => {
-      hooks.visibleColumns.push((columns) => [
-        {
-          id: "selection",
-          Header: ({ getToggleAllRowsSelectedProps }) => (
-            <div>
-              <RowSelectCheckbox {...getToggleAllRowsSelectedProps()} />
-            </div>
-          ),
-          Cell: ({ row }) => (
-            <div>
-              <RowSelectCheckbox {...row.getToggleRowSelectedProps()} />
-            </div>
-          ),
-        },
-        ...columns,
-      ]);
-    }
-  );
-
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    page,
-    nextPage,
-    previousPage,
-    canNextPage,
-    canPreviousPage,
-    pageOptions,
-    state,
-    gotoPage,
-    pageCount,
-    setPageSize,
-    setGlobalFilter,
-    prepareRow,
-    selectedFlatRows,
-    toggleAllRowsSelected,
-  } = tableInstance;
-
-  const { globalFilter, pageIndex, pageSize } = state;
+  const { table, total, meta, loading, loaded, error, reload, sortBy } = useServerTable({
+    endpoint: "/api/tasks",
+    params,
+    columns,
+    sortable: ["title", "category", "budgetAmountNum", "urgency", "status", "featured"],
+    selectable: true,
+  });
+  const { selectedFlatRows, toggleAllRowsSelected, setSortBy } = table;
+  useEffect(() => {
+    if (typeof meta.featuredCount === "number") setFeaturedCount(meta.featuredCount);
+  }, [meta.featuredCount]);
 
   const handleBulkDelete = async () => {
     const ids = selectedFlatRows.map((r) => r.original.id);
@@ -377,10 +298,26 @@ export default function AdminTasks() {
     if (!confirm(t("tasks.confirmBulkDelete", { count: ids.length }))) return;
     const failed = await bulkDelete("/api/tasks", ids);
     if (failed.length) {
-      alert(`${t("tasks.bulkDeleteFailed", { failed: failed.length, total: ids.length })}\n${failed.join("\n")}`);
+      toast.error(`${t("tasks.bulkDeleteFailed", { failed: failed.length, total: ids.length })}\n${failed.join("\n")}`);
     }
     toggleAllRowsSelected(false);
-    fetchTasks();
+    reload();
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const rows = await fetchAllRows("/api/tasks", params, sortBy);
+      exportCsv("tasks.csv", rows.map((x) => ({
+        id: x.id, title: x.title, category: x.category, status: x.status,
+        urgency: x.urgency, budgetType: x.budgetType, budgetAmount: x.budgetAmountNum ?? x.budgetAmount ?? "",
+        city: x.city, createdAt: x.createdAt, user: x.user?.email || "",
+      })));
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -397,18 +334,11 @@ export default function AdminTasks() {
                 onClick={handleBulkDelete}
               />
             )}
-            <button
-              className="btn btn-sm btn-outline-dark"
-              onClick={() => exportCsv("tasks.csv", tasks.map((t) => ({
-                id: t.id, title: t.title, category: t.category, status: t.status,
-                urgency: t.urgency, budgetType: t.budgetType, budgetAmount: t.budgetAmountNum ?? t.budgetAmount ?? "",
-                city: t.city, createdAt: t.createdAt, user: t.user?.email || "",
-              })))}
-            >
-              {t("common.exportCsv")}
+            <button className="btn btn-sm btn-outline-dark" onClick={handleExport} disabled={exporting || total === 0}>
+              {exporting ? t("common.loading") : t("common.exportCsv")}
             </button>
             <span className="text-xs text-slate-400">
-              {t("tasks.featuredCount", { count: featuredCount, max: 3 })}
+              {t("tasks.featuredCount", { count: featuredCount, max: MAX_FEATURED })}
             </span>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
@@ -419,10 +349,12 @@ export default function AdminTasks() {
                 placeholder={t("tasks.searchPlaceholder")}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && setSearchQ(searchInput.trim())}
               />
-              <button className="btn btn-sm btn-dark" onClick={() => setSearchQ(searchInput.trim())}>{t("common.search")}</button>
-              {searchQ && <button className="btn btn-sm btn-outline-dark" onClick={() => { setSearchQ(""); setSearchInput(""); }}>{t("tasks.clear")}</button>}
+              {searchInput && (
+                <button className="btn btn-sm btn-outline-dark" onClick={() => setSearchInput("")}>
+                  {t("tasks.clear")}
+                </button>
+              )}
             </div>
             <select
               className="form-control py-2 w-max"
@@ -448,7 +380,10 @@ export default function AdminTasks() {
             <select
               className="form-control py-2 w-max"
               value={sortFilter}
-              onChange={(e) => setSortFilter(e.target.value)}
+              onChange={(e) => {
+                setSortFilter(e.target.value);
+                setSortBy([]); // the dropdown replaces any column-header sort
+              }}
             >
               <option value="newest">{t("tasks.sortNewest")}</option>
               <option value="oldest">{t("tasks.sortOldest")}</option>
@@ -472,155 +407,16 @@ export default function AdminTasks() {
               />
               {t("tasks.featuredOnly")}
             </label>
-            <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
         </div>
-        {loading ? (
-          <TableSkeleton rows={8} cols={7} />
-        ) : (
-          <>
-            <div className="overflow-x-auto -mx-6">
-              <div className="inline-block min-w-full align-middle">
-                <div className="overflow-hidden ">
-                  <table
-                    className="min-w-full divide-y divide-slate-100 table-fixed dark:divide-slate-700"
-                    {...getTableProps()}
-                  >
-                    <thead className="bg-slate-200 dark:bg-slate-700">
-                      {headerGroups.map((headerGroup) => {
-                        const { key, ...restHeaderGroupProps } = headerGroup.getHeaderGroupProps();
-                        return (
-                          <tr key={key} {...restHeaderGroupProps}>
-                            {headerGroup.headers.map((column) => {
-                              const { key, ...restColumn } = column.getHeaderProps(column.getSortByToggleProps());
-                              return (
-                                <th
-                                  key={key}
-                                  {...restColumn}
-                                  scope="col"
-                                  className=" table-th "
-                                >
-                                  {column.render("Header")}
-                                  <span>
-                                    {column.isSorted
-                                      ? column.isSortedDesc
-                                        ? " 🔽"
-                                        : " 🔼"
-                                      : ""}
-                                  </span>
-                                </th>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </thead>
-                    <tbody
-                      className="bg-white divide-y divide-slate-100 dark:bg-slate-800 dark:divide-slate-700"
-                      {...getTableBodyProps()}
-                    >
-                      {page.map((row) => {
-                        prepareRow(row);
-                        const { key, ...restRowProps } = row.getRowProps();
-                        return (
-                          <tr key={key} {...restRowProps}>
-                            {row.cells.map((cell) => {
-                              const { key, ...restCellProps } = cell.getCellProps();
-                              return (
-                                <td
-                                  key={key}
-                                  {...restCellProps}
-                                  className="table-td"
-                                >
-                                  {cell.render("Cell")}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            <div className="md:flex md:space-y-0 space-y-5 justify-between mt-6 items-center">
-              <div className=" flex items-center space-x-3 rtl:space-x-reverse">
-                <select
-                  className="form-control py-2 w-max"
-                  value={pageSize}
-                  onChange={(e) => setPageSize(Number(e.target.value))}
-                >
-                  {[10, 25, 50, 100].map((pageSize) => (
-                    <option key={pageSize} value={pageSize}>
-                      {t("common.show", { n: pageSize })}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                  {t("common.pageOf", { page: pageIndex + 1, total: pageOptions.length })}
-                </span>
-              </div>
-              <ul className="flex items-center  space-x-3  rtl:space-x-reverse flex-wrap">
-                <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
-                  <button
-                    className={` ${!canPreviousPage ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                    onClick={() => gotoPage(0)}
-                    disabled={!canPreviousPage}
-                  >
-                    <Icon icon="heroicons:chevron-double-left-solid" />
-                  </button>
-                </li>
-                <li className="text-sm leading-4 text-slate-900 dark:text-white rtl:rotate-180">
-                  <button
-                    className={` ${!canPreviousPage ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                    onClick={() => previousPage()}
-                    disabled={!canPreviousPage}
-                  >
-                    {t("common.prev")}
-                  </button>
-                </li>
-                {pageOptions.map((page, pageIdx) => (
-                  <li key={pageIdx}>
-                    <button
-                      href="#"
-                      aria-current="page"
-                      className={` ${pageIdx === pageIndex
-                          ? "bg-slate-900 dark:bg-slate-600  dark:text-slate-200 text-white font-medium "
-                          : "bg-slate-100 dark:bg-slate-700 dark:text-slate-400 text-slate-900  font-normal  "
-                        }    text-sm rounded leading-[16px] flex h-6 w-6 items-center justify-center transition-all duration-150`}
-                      onClick={() => gotoPage(pageIdx)}
-                    >
-                      {page + 1}
-                    </button>
-                  </li>
-                ))}
-                <li className="text-sm leading-4 text-slate-900 dark:text-white rtl:rotate-180">
-                  <button
-                    className={` ${!canNextPage ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                    onClick={() => nextPage()}
-                    disabled={!canNextPage}
-                  >
-                    {t("common.next")}
-                  </button>
-                </li>
-                <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
-                  <button
-                    onClick={() => gotoPage(pageCount - 1)}
-                    disabled={!canNextPage}
-                    className={` ${!canNextPage ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                  >
-                    <Icon icon="heroicons:chevron-double-right-solid" />
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </>
+        {error && (
+          <p className="text-danger text-sm mb-4 flex items-center gap-2">
+            <Icon icon="heroicons-outline:exclamation-circle" className="text-lg" />
+            {error}
+          </p>
         )}
+        <DataTable table={table} loading={loading} loaded={loaded} emptyText={t("common.noResult")} skeletonCols={8} />
+        <TablePagination table={table} total={total} />
       </Card>
 
       <Modal
@@ -631,6 +427,7 @@ export default function AdminTasks() {
           <Button
             text={currentTask ? t("common.update") : t("common.create")}
             className="btn-dark"
+            isLoading={saving}
             onClick={handleSubmit}
           />
         }

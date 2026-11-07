@@ -69,7 +69,8 @@
     "notifications": "Огоҳиномаҳо",
     "viewAll": "Ҳамаашро дидан",
     "noNotifications": "Огоҳиномаи нав нест",
-    "refresh": "Навсозӣ"
+    "refresh": "Навсозӣ",
+    "rangeOf": "{from}–{to} аз {total}"
   },
   "activity": {
     "userJoined": "Корбари нав",
@@ -205,7 +206,8 @@
     "actionRejectResponse": "Рад кардани вокуниш",
     "actionCreateResponse": "Эҷоди вокуниш",
     "actionSubscribe": "Обуна шудан",
-    "actionCancelSubscription": "Бекор кардани обуна"
+    "actionCancelSubscription": "Бекор кардани обуна",
+    "adminActions": "Амалҳои маъмурон"
   },
   "tasks": {
     "title": "Идоракунии супоришҳо",
