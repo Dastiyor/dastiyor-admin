@@ -2,6 +2,25 @@ const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const { faker } = require("@faker-js/faker");
 
+// This script adds test accounts (with a password that is in git) and fake users
+// and tasks. Only run it against a local database, never the shared production one.
+function assertLocalDatabase() {
+  const raw = process.env.POSTGRES_PRISMA_URL || "";
+  let host = "";
+  try {
+    host = new URL(raw).hostname;
+  } catch {}
+  const local = ["localhost", "127.0.0.1", "::1", "[::1]"].includes(host);
+  if (!local && process.env.SEED_ALLOW_REMOTE_DB !== "yes") {
+    console.error(
+      `Refusing to seed: POSTGRES_PRISMA_URL points to "${host || "(unset)"}", not a local database.\n` +
+        "Seeding adds test accounts and fake data. Set SEED_ALLOW_REMOTE_DB=yes only if you really mean it."
+    );
+    process.exit(1);
+  }
+}
+assertLocalDatabase();
+
 const prisma = new PrismaClient();
 
 async function main() {
