@@ -10,6 +10,7 @@ import Select from "@/components/ui/Select";
 import Checkbox from "@/components/ui/Checkbox";
 import Button from "@/components/ui/Button";
 import Tooltip from "@/components/ui/Tooltip";
+import { isHttpUrl } from "@/lib/safeUrl";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import DataTable from "@/components/partials/table/DataTable";
 import TablePagination from "@/components/partials/table/TablePagination";
@@ -396,6 +397,7 @@ export default function AdminUsers() {
         {docsModal && (() => {
           let docs = [];
           try { docs = JSON.parse(docsModal.verificationDocuments) || []; } catch { docs = []; }
+          docs = Array.isArray(docs) ? docs.filter(isHttpUrl) : [];
           return docs.length === 0 ? (
             <p className="text-slate-500 text-sm">{t("users.noDocuments")}</p>
           ) : (

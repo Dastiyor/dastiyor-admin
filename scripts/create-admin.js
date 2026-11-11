@@ -41,6 +41,8 @@ async function main() {
       isVerified: true,
       loginAttempts: 0,
       lockedUntil: null,
+      // Sign out every existing session, so a stolen token stops working.
+      tokenVersion: { increment: 1 },
     },
     create: {
       fullName: "Dastiyor Admin",

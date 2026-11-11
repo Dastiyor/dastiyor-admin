@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 import { useTranslation } from "@/context/LanguageContext";
 import { toast } from "react-toastify";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { isHttpUrl } from "@/lib/safeUrl";
 import {
   Field,
   Section,
@@ -26,7 +27,7 @@ const STATUSES = ["OPEN", "IN_PROGRESS", "COMPLETED", "CANCELLED"];
 function parseImages(raw) {
   try {
     const v = JSON.parse(raw || "[]");
-    return Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
+    return Array.isArray(v) ? v.filter(isHttpUrl) : [];
   } catch {
     return [];
   }

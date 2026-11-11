@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 import { useTranslation } from "@/context/LanguageContext";
 import { toast } from "react-toastify";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { isHttpUrl } from "@/lib/safeUrl";
 import {
   Field,
   Section,
@@ -25,9 +26,9 @@ import {
 function parseList(raw) {
   try {
     const v = JSON.parse(raw || "[]");
-    return Array.isArray(v) ? v : [];
+    return Array.isArray(v) ? v.filter(isHttpUrl) : [];
   } catch {
-    return raw ? [raw] : [];
+    return isHttpUrl(raw) ? [raw] : [];
   }
 }
 

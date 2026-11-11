@@ -31,40 +31,47 @@ export async function POST(request) {
     }
 
     const now = new Date();
-    if (user.lockedUntil && user.lockedUntil > now) {
-      const minutes = Math.ceil((user.lockedUntil - now) / 60000);
-      return NextResponse.json(
-        { error: `Too many failed attempts. Try again in ${minutes} min.` },
-        { status: 429 }
-      );
+    // An expired lock starts a fresh count.
+    await prisma.user.updateMany({
+      where: { id: user.id, lockedUntil: { lte: now } },
+      data: { loginAttempts: 0, lockedUntil: null },
+    });
+
+    // Reserve this attempt before checking the password. The increment is atomic,
+    // so parallel requests can't all slip past the limit.
+    const reserved = await prisma.user.updateMany({
+      where: { id: user.id, lockedUntil: null, loginAttempts: { lt: MAX_ATTEMPTS } },
+      data: { loginAttempts: { increment: 1 } },
+    });
+    if (reserved.count === 0) {
+      // Locked. Make sure the lock time is set, then answer exactly like a wrong
+      // password, so the response doesn't reveal that this email is an admin.
+      await prisma.user.updateMany({
+        where: { id: user.id, lockedUntil: null },
+        data: { lockedUntil: new Date(now.getTime() + LOCK_MINUTES * 60000) },
+      });
+      await bcrypt.compare(password, DUMMY_HASH);
+      return NextResponse.json({ error: INVALID }, { status: 401 });
     }
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
-      // An expired lock starts a fresh count.
-      const attempts = (user.lockedUntil ? 0 : user.loginAttempts) + 1;
-      const lock = attempts >= MAX_ATTEMPTS;
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          loginAttempts: attempts,
-          lockedUntil: lock ? new Date(now.getTime() + LOCK_MINUTES * 60000) : null,
-        },
+      const lockedNow = await prisma.user.updateMany({
+        where: { id: user.id, lockedUntil: null, loginAttempts: { gte: MAX_ATTEMPTS } },
+        data: { lockedUntil: new Date(now.getTime() + LOCK_MINUTES * 60000) },
       });
       await logAction(request, user.id, "admin_login_failed", {
         entity: "User",
         entityId: user.id,
-        details: { attempts, locked: lock },
+        details: { locked: lockedNow.count > 0 },
       });
       return NextResponse.json({ error: INVALID }, { status: 401 });
     }
 
-    if (user.loginAttempts || user.lockedUntil) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { loginAttempts: 0, lockedUntil: null },
-      });
-    }
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { loginAttempts: 0, lockedUntil: null },
+    });
 
     const token = await signToken({
       sub: user.id,
