@@ -33,6 +33,14 @@ const Textinput = ({
   ...rest
 }) => {
   const [open, setOpen] = useState(false);
+  // react-hook-form's onChange must always run, or typing, Enter-submit and
+  // autofill leave the form value empty. A caller's onChange runs after it.
+  const chain = (reg, extra) => ({
+    onChange: (e) => {
+      reg.onChange(e);
+      extra?.(e);
+    },
+  });
   const handleOpen = () => {
     setOpen(!open);
   };
@@ -67,7 +75,7 @@ const Textinput = ({
             defaultValue={defaultValue}
             disabled={disabled}
             id={id}
-            onChange={onChange}
+            {...chain(register(name), onChange)}
           />
         )}
         {!name && !isMask && (
@@ -95,7 +103,7 @@ const Textinput = ({
             id={id}
             readOnly={readonly}
             disabled={disabled}
-            onChange={onChange}
+            {...chain(register(name), onChange)}
           />
         )}
         {!name && isMask && (

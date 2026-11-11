@@ -17,6 +17,7 @@ import { useTranslation } from "@/context/LanguageContext";
 import { useUrlFilter, UrlFilterChip } from "@/components/partials/admin/UrlFilter";
 import { UserLink, TaskLink } from "@/components/partials/admin/Links";
 import { toast } from "react-toastify";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { dateLocale } from "@/components/partials/admin/Detail";
 
 const TYPE_KEYS = {
@@ -35,12 +36,14 @@ export default function AdminNotifications() {
   const presetUserId = useUrlFilter("userId");
   const [sendForm, setSendForm] = useState({ title: "", message: "", type: "SYSTEM", link: "", userId: presetUserId });
   const [sending, setSending] = useState(false);
+  const confirm = useConfirm();
 
   const handleSend = async () => {
     if (!sendForm.title.trim() || !sendForm.message.trim()) {
       toast.error(t("notifications.titleMessageRequired"));
       return;
     }
+    if (!sendForm.userId.trim() && !(await confirm({ message: t("notifications.confirmBroadcast"), confirmText: t("notifications.broadcast"), danger: true }))) return;
     setSending(true);
     try {
       const body = { ...sendForm };

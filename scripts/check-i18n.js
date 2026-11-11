@@ -32,6 +32,18 @@ const ruKeys = new Set(flat(ru));
 const tgKeys = new Set(flat(tg));
 
 const missing = [];
+
+// t("a.b") walks nested objects, so a key written as "b.c" inside "a" can never
+// be reached, yet flat() would join it to "a.b.c" and pass it.
+const dotted = (obj, prefix = "") =>
+    Object.entries(obj).flatMap(([k, v]) => [
+        ...(k.includes(".") ? [`${prefix}${k}`] : []),
+        ...(v && typeof v === "object" ? dotted(v, `${prefix}${k}.`) : []),
+    ]);
+for (const [l, obj] of [["ru", ru], ["tg", tg]]) {
+    for (const k of dotted(obj)) missing.push(`constant/locales/${l}.json: "${k}" has a dot in its key; nest it instead`);
+}
+
 for (const file of [...walk(path.join(root, "app")), ...walk(path.join(root, "components"))]) {
     const src = fs.readFileSync(file, "utf8");
     for (const m of src.matchAll(/\bt\(\s*"([\w.]+)"/g)) {
